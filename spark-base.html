@@ -1,0 +1,270 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+#Spark架构与工作机制
+
+##架构组件概念简介
+Spark集群中Master负责集群整体资源管理和调度，Worker负责单个节点的资源管理。Driver程序是应用逻辑执行的起点，而多个Executor用来对数据进行并行处理。
+
+###Spark的构成：
+
+* ClusterManager: 在standalone模式中即为，Master：主节点，控制整个集群监控Worker。在YRAN模式中为资源管理器。
+* Worker： 从节点，负责控制计算节点，启动Executor或Driver。在YRAN模式中为NodeManager，负责计算节点的控制。
+* Driver： 运行Application的main()函数并且创建SparkContext。
+*  SparkContext： 整个应用的上下文，控制应用的生命周期。
+* RDD： Spark的基本计算单元，一组RDD形成的有向无环图RDD Graph。
+* DAG Scheduler： 根据Job构建基于Stage的DAG，并提交Stage给TaskScheduler。
+
+###架构图
+在client端提交应用，ClusterManager接受到应用之后启动Driver ， Driver中会创建
+SparkContext对象，将应用拆分成多个RDD DAG， 之后每个DAG提交给DAGScheduler ， DAGScheduler会拆分成
+不同的 stage， 之后再将它提交给TaskScheduler， TaskScheduler 会将这些任务不断的分发到Worker节点的Executor
+中进行执行， 而 Executor会启动多线程，将每一个任务分配给一个线程去执行，而SparkEnv 会启动一些控制组件
+进行shuffer管理或者广播变量的管理等等
+
+###集群执行机制
+Client 提交应用， Master找到一个Worker启动Driver， Driver向Master或者资源管理器申请资源，之后将应用转化为RDD Graph，再由DAGScheduler将RDD Graph
+转化为Stage的有向无环图提交给TaskScheduler， 由TaskScheduler提交任务给Executor进行执行。执行的过程中其他组件再协同工作确保整个应用顺利执行。
+
+##Spark的工作机制
+
+###Spark作业：
+
+- Application： 用户自定义的Spark程序，用户提交后，Spark为App分配资源将程序转换并执行。
+- Driver Program： 运行Application的main()函数并且创建SparkContext。是整个程序的调度者。
+- RDD DAG: 当RDD遇到Action算子，将之前的所有算子形成一个有向无环图（DAG）。再在Spark中转化为Job，提交到集群进行执行。一个App钟可以包含多Job。
+- Job： 一个RDD Graph触发的作业，往往由Spark Action算子触发，在SparkContext中通过runJob方法向Spark提交Job。
+- Stage： 每个Job会根据RDD的宽依赖关系被切分很多Stage，每个Stage中包含一组相同的Task，这一组Task也叫TaskSet。
+- Task： 一个分区对应一个Task，Task执行RDD中对应Stage中所包含的算子。Task被封装好后放入Executor的线程池中执行。
+
+###程序与作业概念映射
+val rawFile = sc.textFile(“README.md” )   // 输入一个文本文件转换为RDD
+val words = rawFile.flatMap(line=>line.split(“”))  //将文本文件进行分词，转换成一个单词的RDD
+val wordNumber = words.map(w=>(w,1))  // 将RDD中的每个单词，映射为以单词名称为key，value为1的key-value对
+val wordCounts = wordNumber.reduceByKey(  + )  //将同一个单词的数据进行聚集，进而统计好每个单词的个数
+wordCounts.foreach(println)  //通过foreach方法输出每个单词的计数
+wordCounts.saveAsTextFile // 将结果输出到文件中
+
+##Spark的运行流程：
+
+- Spark程序转换 （由Application转换成不同的任务集）
+- 输入数据块
+- 根据调度策略执行各个Stage的Tasks （集群根据自己的调度策略，将Stage中的Task分发到各个节点，在每个数据块中进行执行，执行完成后会根据Shuffle 进行混洗，再进行下一阶段的Stage，直到所有的Stage执行完）
+- 输出结果返回
+
+##Spark中的调度
+
+###作业调度：
+系统的设计很重要的一环便是资源调度。设计者将资源进行不同粒度的抽象建模，然后将资源统一放入调度器，通过一定的算法进行调度，最终要达到高吞吐或者低访问延迟的目的。
+
+Spark有多种运行模式，例如Local模式、Standalone模式、YRAN模式、Mesos模式。在集群环境中，为了减少复杂性，抓住系统主要脉络进行理解。
+
+###Application调度：
+Application调度就是组由用户提交到Spark中的作业集合，通过一定的算法，对每个按一定次序分配集群中资源的过程。
+(将Application抽象成一个一个的作业项，将集群中的资源抽象成一个资源池，不断将资源池中的资源取出分配给作业项，或者，作业执行完成后通过一定的算法，再将资源分配给下一个作业项)
+
+###Application调度模式：
+- Standalone： FIFO模式（默认先进先出模式）
+- Mesos: 粗粒度模式和细粒度模式
+- YARN： 独占模式
+
+Job调度就是在Application内部的一组Job集合，在Application分配到的资源量下，通过一定的算法，对每个按一定次序分配Application中资源的过程。
+
+###FIFO模式：
+默认情况下，Spark的调度器以FIFO（先进先出）的方式调度Job的执行。每个Job被切分为多个stage。第一个Job优先获取所有可用的资源，接下来第二个Job
+再进行剩余资源获取。这样依次类推，如果第一个Job并没有占用满所有的资源，则第二个Job还可以继续获取剩余资源，这样多个Job可以并行运行。
+
+###数据本地性：
+尽量的避免数据在网络上的传输
+
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h1 id="spark">Spark架构与工作机制</h1>
+
+<h2 id="">架构组件概念简介</h2>
+
+<p>Spark集群中Master负责集群整体资源管理和调度，Worker负责单个节点的资源管理。Driver程序是应用逻辑执行的起点，而多个Executor用来对数据进行并行处理。</p>
+
+<h3 id="spark">Spark的构成：</h3>
+
+<ul>
+<li>ClusterManager: 在standalone模式中即为，Master：主节点，控制整个集群监控Worker。在YRAN模式中为资源管理器。</li>
+<li>Worker： 从节点，负责控制计算节点，启动Executor或Driver。在YRAN模式中为NodeManager，负责计算节点的控制。</li>
+<li>Driver： 运行Application的main()函数并且创建SparkContext。</li>
+<li>SparkContext： 整个应用的上下文，控制应用的生命周期。</li>
+<li>RDD： Spark的基本计算单元，一组RDD形成的有向无环图RDD Graph。</li>
+<li>DAG Scheduler： 根据Job构建基于Stage的DAG，并提交Stage给TaskScheduler。</li>
+</ul>
+
+<h3 id="">架构图</h3>
+
+<p>在client端提交应用，ClusterManager接受到应用之后启动Driver ， Driver中会创建
+SparkContext对象，将应用拆分成多个RDD DAG， 之后每个DAG提交给DAGScheduler ， DAGScheduler会拆分成
+不同的 stage， 之后再将它提交给TaskScheduler， TaskScheduler 会将这些任务不断的分发到Worker节点的Executor
+中进行执行， 而 Executor会启动多线程，将每一个任务分配给一个线程去执行，而SparkEnv 会启动一些控制组件
+进行shuffer管理或者广播变量的管理等等</p>
+
+<h3 id="">集群执行机制</h3>
+
+<p>Client 提交应用， Master找到一个Worker启动Driver， Driver向Master或者资源管理器申请资源，之后将应用转化为RDD Graph，再由DAGScheduler将RDD Graph
+转化为Stage的有向无环图提交给TaskScheduler， 由TaskScheduler提交任务给Executor进行执行。执行的过程中其他组件再协同工作确保整个应用顺利执行。</p>
+
+<h2 id="spark">Spark的工作机制</h2>
+
+<h3 id="spark">Spark作业：</h3>
+
+<ul>
+<li>Application： 用户自定义的Spark程序，用户提交后，Spark为App分配资源将程序转换并执行。</li>
+<li>Driver Program： 运行Application的main()函数并且创建SparkContext。是整个程序的调度者。</li>
+<li>RDD DAG: 当RDD遇到Action算子，将之前的所有算子形成一个有向无环图（DAG）。再在Spark中转化为Job，提交到集群进行执行。一个App钟可以包含多Job。</li>
+<li>Job： 一个RDD Graph触发的作业，往往由Spark Action算子触发，在SparkContext中通过runJob方法向Spark提交Job。</li>
+<li>Stage： 每个Job会根据RDD的宽依赖关系被切分很多Stage，每个Stage中包含一组相同的Task，这一组Task也叫TaskSet。</li>
+<li>Task： 一个分区对应一个Task，Task执行RDD中对应Stage中所包含的算子。Task被封装好后放入Executor的线程池中执行。</li>
+</ul>
+
+<h3 id="">程序与作业概念映射</h3>
+
+<p>val rawFile = sc.textFile(“README.md” )   // 输入一个文本文件转换为RDD
+val words = rawFile.flatMap(line=&gt;line.split(“”))  //将文本文件进行分词，转换成一个单词的RDD
+val wordNumber = words.map(w=&gt;(w,1))  // 将RDD中的每个单词，映射为以单词名称为key，value为1的key-value对
+val wordCounts = wordNumber.reduceByKey(  + )  //将同一个单词的数据进行聚集，进而统计好每个单词的个数
+wordCounts.foreach(println)  //通过foreach方法输出每个单词的计数
+wordCounts.saveAsTextFile // 将结果输出到文件中</p>
+
+<h2 id="spark">Spark的运行流程：</h2>
+
+<ul>
+<li>Spark程序转换 （由Application转换成不同的任务集）</li>
+<li>输入数据块</li>
+<li>根据调度策略执行各个Stage的Tasks （集群根据自己的调度策略，将Stage中的Task分发到各个节点，在每个数据块中进行执行，执行完成后会根据Shuffle 进行混洗，再进行下一阶段的Stage，直到所有的Stage执行完）</li>
+<li>输出结果返回</li>
+</ul>
+
+<h2 id="spark">Spark中的调度</h2>
+
+<h3 id="">作业调度：</h3>
+
+<p>系统的设计很重要的一环便是资源调度。设计者将资源进行不同粒度的抽象建模，然后将资源统一放入调度器，通过一定的算法进行调度，最终要达到高吞吐或者低访问延迟的目的。</p>
+
+<p>Spark有多种运行模式，例如Local模式、Standalone模式、YRAN模式、Mesos模式。在集群环境中，为了减少复杂性，抓住系统主要脉络进行理解。</p>
+
+<h3 id="application">Application调度：</h3>
+
+<p>Application调度就是组由用户提交到Spark中的作业集合，通过一定的算法，对每个按一定次序分配集群中资源的过程。
+(将Application抽象成一个一个的作业项，将集群中的资源抽象成一个资源池，不断将资源池中的资源取出分配给作业项，或者，作业执行完成后通过一定的算法，再将资源分配给下一个作业项)</p>
+
+<h3 id="application">Application调度模式：</h3>
+
+<ul>
+<li>Standalone： FIFO模式（默认先进先出模式）</li>
+<li>Mesos: 粗粒度模式和细粒度模式</li>
+<li>YARN： 独占模式</li>
+</ul>
+
+<p>Job调度就是在Application内部的一组Job集合，在Application分配到的资源量下，通过一定的算法，对每个按一定次序分配Application中资源的过程。</p>
+
+<h3 id="fifo">FIFO模式：</h3>
+
+<p>默认情况下，Spark的调度器以FIFO（先进先出）的方式调度Job的执行。每个Job被切分为多个stage。第一个Job优先获取所有可用的资源，接下来第二个Job
+再进行剩余资源获取。这样依次类推，如果第一个Job并没有占用满所有的资源，则第二个Job还可以继续获取剩余资源，这样多个Job可以并行运行。</p>
+
+<h3 id="">数据本地性：</h3>
+
+<p>尽量的避免数据在网络上的传输</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "spark-base.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
