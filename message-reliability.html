@@ -1,0 +1,187 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+##Storm可以支持的消息可靠性级别
+可丢不重： Spout在fail后不replay tuple
+不丢可重： Spout在fail后replay tuple 
+不丢不重： trident Transactional
+
+##Storm如何做到不丢信息的？
+- ack机制跟踪一个tuple从Spout emit后，是否在超时时间内完全处理完
+- 超时时间内完全处理完调用Spout的ack回调函数
+- 超时时间内没有完全处理完调用Spout的fail回调函数，这里可以实现replay tuple逻辑，从而保证不丢数据
+
+##ack机制：
+- Storm平台检测一个tuple是否在超时时间内完成处理，并调用ack和fail回调函数通知spout
+- spout选择在ack/fail 回调函数里面实现自己的逻辑，比如重发tuple
+
+##Spout emit的一个tuple怎么才算完成处理？
+- 这个tuple自己被bolt处理后ack了
+- bolt基于这个tuple产生的新tuple又被后续的bolt处理后ack了
+- 递归下去直到最后一级bolt （注： 最后一级bolt产生的新tuple没有下游bolt处理了，所以不需要被ack）
+
+##怎么跟踪所有子tuple的ack情况？
+- 每个Spout emit 的tuple只需要一个long来跟踪
+- 而且不管基于这个tuple产生多少心tuple都只需要一个long，利用了异或运算的特点
+- 引入一个专门的hacker bolt 维护这个long
+
+##Storm精妙的算法 (hacker bolt)
+- 自动在topology中增加 acker bolt   ， 并建立好几个特殊的steam
+- ack消息都发送给acker bolt
+- acker bolt 跟踪tuple是否完成
+- acker bolt在tuple完成后给spout发送消息
+
+##tuple ack跟踪-怎么关闭/防止无意识关闭
+- 设置acker个数（Config.TOPOLOGY_ACKERS ）为0， 关闭，这个值默认是1
+- Spout emit tuple 时不设置message id , 关闭， 不关闭的时候一定要设置一个有意义的 message id
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="storm">Storm可以支持的消息可靠性级别</h2>
+
+<p>可丢不重： Spout在fail后不replay tuple
+不丢可重： Spout在fail后replay tuple 
+不丢不重： trident Transactional</p>
+
+<h2 id="storm">Storm如何做到不丢信息的？</h2>
+
+<ul>
+<li>ack机制跟踪一个tuple从Spout emit后，是否在超时时间内完全处理完</li>
+<li>超时时间内完全处理完调用Spout的ack回调函数</li>
+<li>超时时间内没有完全处理完调用Spout的fail回调函数，这里可以实现replay tuple逻辑，从而保证不丢数据</li>
+</ul>
+
+<h2 id="ack">ack机制：</h2>
+
+<ul>
+<li>Storm平台检测一个tuple是否在超时时间内完成处理，并调用ack和fail回调函数通知spout</li>
+<li>spout选择在ack/fail 回调函数里面实现自己的逻辑，比如重发tuple</li>
+</ul>
+
+<h2 id="spoutemittuple">Spout emit的一个tuple怎么才算完成处理？</h2>
+
+<ul>
+<li>这个tuple自己被bolt处理后ack了</li>
+<li>bolt基于这个tuple产生的新tuple又被后续的bolt处理后ack了</li>
+<li>递归下去直到最后一级bolt （注： 最后一级bolt产生的新tuple没有下游bolt处理了，所以不需要被ack）</li>
+</ul>
+
+<h2 id="tupleack">怎么跟踪所有子tuple的ack情况？</h2>
+
+<ul>
+<li>每个Spout emit 的tuple只需要一个long来跟踪</li>
+<li>而且不管基于这个tuple产生多少心tuple都只需要一个long，利用了异或运算的特点</li>
+<li>引入一个专门的hacker bolt 维护这个long</li>
+</ul>
+
+<h2 id="stormhackerbolt">Storm精妙的算法 (hacker bolt)</h2>
+
+<ul>
+<li>自动在topology中增加 acker bolt   ， 并建立好几个特殊的steam</li>
+<li>ack消息都发送给acker bolt</li>
+<li>acker bolt 跟踪tuple是否完成</li>
+<li>acker bolt在tuple完成后给spout发送消息</li>
+</ul>
+
+<h2 id="tupleack">tuple ack跟踪-怎么关闭/防止无意识关闭</h2>
+
+<ul>
+<li>设置acker个数（Config.TOPOLOGY_ACKERS ）为0， 关闭，这个值默认是1</li>
+<li>Spout emit tuple 时不设置message id , 关闭， 不关闭的时候一定要设置一个有意义的 message id</li>
+</ul>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "message-reliability.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
