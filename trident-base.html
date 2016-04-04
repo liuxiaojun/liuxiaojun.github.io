@@ -1,0 +1,291 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+##Trident是Storm基础上封装的高级框架
+
+- 集成常用操作如filter, function （转换）, group, aggregation （集合 count等）, join
+- 支持不丢不重 （exactly once）
+- 支持有状态的流式处理，可以对接各种存储系统
+- 集成DRPC查询状态
+
+##Trident特点
+
+- 比原生Storm API更简单易用
+    - 提供了高层操作，如filter，group， join等
+    - 封装了复杂的有状态，不丢不重流式处理
+    - 封装了复杂的流式处理
+- 兼顾流式处理的低延迟和批处理的高吞吐
+    - 默认做了微批处理，批量读写存储优化
+    - 分批大小可以灵活控制，延迟依然可控
+    - 自动对操作进行组合优化，避免不必要的网络传输
+- 是一个可扩展框架
+    - 可以增加自己的高层处理函数实现业务逻辑
+    - 可以实现与已有存储系统对接的有状态处理
+    - 可以根据需求选择不同级别的容错： at most once / at least once / exactly once
+
+##Trident 基本概念
+
+- TridentStream
+    - Stream由一系列tridentTuple batch组成
+    - Stream分partition， 一个task一个Partition
+    - 在Stream上进行操作产生新的Stream / State, 就高程了一个##TridentTopology
+###TridentState
+    - 封装了状态处理，对接不同存储系统
+    - 幂等状态更新操作，支持exactly once语义
+
+##Trident怎么用？
+     ###流式数据处理
+
+    - 调用newStream基于spout创建初始Stream
+    - 调用各种操作如fifter，group进行Stream变换
+    - 调用persist*接口存储要保存的状态
+
+    ### 用DRPC查询状态
+
+    - 调用newDRPCStream创建DRPC请求Stream
+    - 调用stateQuery读取之前保存的状态
+
+##Trident原理
+
+### 怎么做到不丢不重
+
+
+###怎么维护状态
+
+- 状态值和txid组合成一个JSON串，原子更新
+- State框架内部做好根据txid去重的逻辑
+- State框架调用对应存储系统具体实现的接口如 multiGet / multiPut 更新状态
+- State框架内部提供cache、批处理等性能优化
+
+
+###怎么集成DRPC查询状态
+
+- 从DRPCSpout生成一个Stream  + 普通操作
+- 在这个Stream上进行各种操作实现逻辑
+- 调用stateQuery查询State中的状态数据
+- 对返回的状态Stream继续做后续操作
+
+##封装常用操作
+
+- 每个操作对应一个TridentOperator和TridentTopology中的一个Node
+- partition local的一个或多个TridentOperator组成一个Bolt
+- 每个repartition操作对应一次StreamGrouping， 产生新的Bolt
+- 最终生成一个普通的StormTopology
+
+##TridentPVTopology设计
+###计算部分：
+
+- 利用TransactionalTridentKafkaSpout库读取数据源
+- 实现一个Function从log中提取time和url
+- 利用persistentAggerate计算PV并保存状态
+- 利用RedisState库将状态持久化redis
+
+###查询部分：
+
+- 直接用DRPC args查询RedisState中的数据
+
+
+后面吧这个例子整理完整。。TODO
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="tridentstorm">Trident是Storm基础上封装的高级框架</h2>
+
+<ul>
+<li>集成常用操作如filter, function （转换）, group, aggregation （集合 count等）, join</li>
+<li>支持不丢不重 （exactly once）</li>
+<li>支持有状态的流式处理，可以对接各种存储系统</li>
+<li>集成DRPC查询状态</li>
+</ul>
+
+<h2 id="trident">Trident特点</h2>
+
+<ul>
+<li>比原生Storm API更简单易用
+<ul><li>提供了高层操作，如filter，group， join等</li>
+<li>封装了复杂的有状态，不丢不重流式处理</li>
+<li>封装了复杂的流式处理</li></ul></li>
+<li>兼顾流式处理的低延迟和批处理的高吞吐
+<ul><li>默认做了微批处理，批量读写存储优化</li>
+<li>分批大小可以灵活控制，延迟依然可控</li>
+<li>自动对操作进行组合优化，避免不必要的网络传输</li></ul></li>
+<li>是一个可扩展框架
+<ul><li>可以增加自己的高层处理函数实现业务逻辑</li>
+<li>可以实现与已有存储系统对接的有状态处理</li>
+<li>可以根据需求选择不同级别的容错： at most once / at least once / exactly once</li></ul></li>
+</ul>
+
+<h2 id="trident">Trident 基本概念</h2>
+
+<ul>
+<li>TridentStream
+<ul><li>Stream由一系列tridentTuple batch组成</li>
+<li>Stream分partition， 一个task一个Partition</li>
+<li>在Stream上进行操作产生新的Stream / State, 就高程了一个##TridentTopology</li></ul></li>
+</ul>
+
+<h3 id="tridentstate">TridentState</h3>
+
+<pre><code>- 封装了状态处理，对接不同存储系统
+- 幂等状态更新操作，支持exactly once语义
+</code></pre>
+
+<h2 id="trident">Trident怎么用？</h2>
+
+<pre><code> ###流式数据处理
+
+- 调用newStream基于spout创建初始Stream
+- 调用各种操作如fifter，group进行Stream变换
+- 调用persist*接口存储要保存的状态
+
+### 用DRPC查询状态
+
+- 调用newDRPCStream创建DRPC请求Stream
+- 调用stateQuery读取之前保存的状态
+</code></pre>
+
+<h2 id="trident">Trident原理</h2>
+
+<h3 id="">怎么做到不丢不重</h3>
+
+<h3 id="">怎么维护状态</h3>
+
+<ul>
+<li>状态值和txid组合成一个JSON串，原子更新</li>
+<li>State框架内部做好根据txid去重的逻辑</li>
+<li>State框架调用对应存储系统具体实现的接口如 multiGet / multiPut 更新状态</li>
+<li>State框架内部提供cache、批处理等性能优化</li>
+</ul>
+
+<h3 id="drpc">怎么集成DRPC查询状态</h3>
+
+<ul>
+<li>从DRPCSpout生成一个Stream  + 普通操作</li>
+<li>在这个Stream上进行各种操作实现逻辑</li>
+<li>调用stateQuery查询State中的状态数据</li>
+<li>对返回的状态Stream继续做后续操作</li>
+</ul>
+
+<h2 id="">封装常用操作</h2>
+
+<ul>
+<li>每个操作对应一个TridentOperator和TridentTopology中的一个Node</li>
+<li>partition local的一个或多个TridentOperator组成一个Bolt</li>
+<li>每个repartition操作对应一次StreamGrouping， 产生新的Bolt</li>
+<li>最终生成一个普通的StormTopology</li>
+</ul>
+
+<h2 id="tridentpvtopology">TridentPVTopology设计</h2>
+
+<h3 id="">计算部分：</h3>
+
+<ul>
+<li>利用TransactionalTridentKafkaSpout库读取数据源</li>
+<li>实现一个Function从log中提取time和url</li>
+<li>利用persistentAggerate计算PV并保存状态</li>
+<li>利用RedisState库将状态持久化redis</li>
+</ul>
+
+<h3 id="">查询部分：</h3>
+
+<ul>
+<li>直接用DRPC args查询RedisState中的数据</li>
+</ul>
+
+<p>后面吧这个例子整理完整。。TODO</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "trident-base.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
