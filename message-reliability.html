@@ -47,9 +47,9 @@
 ##怎么跟踪所有子tuple的ack情况？
 - 每个Spout emit 的tuple只需要一个long来跟踪
 - 而且不管基于这个tuple产生多少心tuple都只需要一个long，利用了异或运算的特点
-- 引入一个专门的hacker bolt 维护这个long
+- 引入一个专门的acker bolt 维护这个long
 
-##Storm精妙的算法 (hacker bolt)
+##Storm精妙的算法 (acker bolt)
 - 自动在topology中增加 acker bolt   ， 并建立好几个特殊的steam
 - ack消息都发送给acker bolt
 - acker bolt 跟踪tuple是否完成
@@ -96,10 +96,10 @@
 <ul>
 <li>每个Spout emit 的tuple只需要一个long来跟踪</li>
 <li>而且不管基于这个tuple产生多少心tuple都只需要一个long，利用了异或运算的特点</li>
-<li>引入一个专门的hacker bolt 维护这个long</li>
+<li>引入一个专门的acker bolt 维护这个long</li>
 </ul>
 
-<h2 id="stormhackerbolt">Storm精妙的算法 (hacker bolt)</h2>
+<h2 id="stormackerbolt">Storm精妙的算法 (acker bolt)</h2>
 
 <ul>
 <li>自动在topology中增加 acker bolt   ， 并建立好几个特殊的steam</li>
