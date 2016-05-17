@@ -82,6 +82,101 @@ public class Singleton {
 ```
 * 优点：线程安全，可确保正常使用下（不考虑通过反射调用私有构造方法）只有一个实例
 * 缺点：每次获取实例都需要申请锁，开销大，效率低
+
+##同步代码块下的懒汉 - 不可用
+```
+package com.socialmaster.singleton3;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    if (INSTANCE == null) {
+      synchronized (Singleton.class) {
+        INSTANCE = new Singleton();
+      }
+    }
+    return INSTANCE;
+  }
+}
+```
+* 优点：不需要在每次调用时加锁，效率比上一个高
+* 缺点：虽然使用了synchronized，但本质上是线程不安全的。
+
+## 不正确双重检查（Double Check）下的懒汉 - 不推荐
+```
+package com.socialmaster.singleton4;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    if (INSTANCE == null) {
+      synchronized(Singleton.class){
+        if(INSTANCE == null) {
+          INSTANCE = new Singleton();
+        }
+      }
+    }
+    return INSTANCE;
+  }
+
+}
+```
+* 优点：使用了双重检查，很大程度上避免了线程不安全，同时也避免了不必要的锁开销
+* 缺点：依然存在创建多个实例的可能。因为每个线程都有自己的一份拷贝，并不能保证实例化后将INSTANCE的引用拷回主内存，不能保证对其它线程立即可见，所以仍然有可能造成多个实例被创建
+
+## 正确双重检查（Double Check）下的懒汉 - 推荐
+```
+package com.socialmaster.singleton5;
+
+public class Singleton {
+
+  private static volatile Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    if (INSTANCE == null) {
+      synchronized (Singleton.class) {
+        if (INSTANCE == null) {
+          INSTANCE = new Singleton();
+        }
+      }
+    }
+    return INSTANCE;
+  }
+
+}
+```
+* 优点：使用了双重检查，同时使用volatile修饰INSTANCE，避免由于多线性同步和可见性问题造成的多实例
+* 缺点：NA
+
+## 静态常量 饿汉 - 推荐
+```
+package com.socialmaster.singleton6;
+
+public class Singleton {
+
+  private static final Singleton INSTANCE = new Singleton();
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    return INSTANCE;
+  }
+
+}
+```
+* 优点：实现简单，无线程同步问题
+* 缺点：在类装载时完成实例化。若该实例一直未被使用，则会造成资源浪费
+
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -155,6 +250,112 @@ public class Singleton {
 <ul>
 <li>优点：线程安全，可确保正常使用下（不考虑通过反射调用私有构造方法）只有一个实例</li>
 <li>缺点：每次获取实例都需要申请锁，开销大，效率低</li>
+</ul>
+
+<h2 id="">同步代码块下的懒汉 - 不可用</h2>
+
+<pre><code>package com.socialmaster.singleton3;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    if (INSTANCE == null) {
+      synchronized (Singleton.class) {
+        INSTANCE = new Singleton();
+      }
+    }
+    return INSTANCE;
+  }
+}
+</code></pre>
+
+<ul>
+<li>优点：不需要在每次调用时加锁，效率比上一个高</li>
+<li>缺点：虽然使用了synchronized，但本质上是线程不安全的。</li>
+</ul>
+
+<h2 id="doublecheck">不正确双重检查（Double Check）下的懒汉 - 不推荐</h2>
+
+<pre><code>package com.socialmaster.singleton4;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    if (INSTANCE == null) {
+      synchronized(Singleton.class){
+        if(INSTANCE == null) {
+          INSTANCE = new Singleton();
+        }
+      }
+    }
+    return INSTANCE;
+  }
+
+}
+</code></pre>
+
+<ul>
+<li>优点：使用了双重检查，很大程度上避免了线程不安全，同时也避免了不必要的锁开销</li>
+<li>缺点：依然存在创建多个实例的可能。因为每个线程都有自己的一份拷贝，并不能保证实例化后将INSTANCE的引用拷回主内存，不能保证对其它线程立即可见，所以仍然有可能造成多个实例被创建</li>
+</ul>
+
+<h2 id="doublecheck">正确双重检查（Double Check）下的懒汉 - 推荐</h2>
+
+<pre><code>package com.socialmaster.singleton5;
+
+public class Singleton {
+
+  private static volatile Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    if (INSTANCE == null) {
+      synchronized (Singleton.class) {
+        if (INSTANCE == null) {
+          INSTANCE = new Singleton();
+        }
+      }
+    }
+    return INSTANCE;
+  }
+
+}
+</code></pre>
+
+<ul>
+<li>优点：使用了双重检查，同时使用volatile修饰INSTANCE，避免由于多线性同步和可见性问题造成的多实例</li>
+<li>缺点：NA</li>
+</ul>
+
+<h2 id="">静态常量 饿汉 - 推荐</h2>
+
+<pre><code>package com.socialmaster.singleton6;
+
+public class Singleton {
+
+  private static final Singleton INSTANCE = new Singleton();
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    return INSTANCE;
+  }
+
+}
+</code></pre>
+
+<ul>
+<li>优点：实现简单，无线程同步问题</li>
+<li>缺点：在类装载时完成实例化。若该实例一直未被使用，则会造成资源浪费</li>
 </ul>
 <!-- content end -->
 </div>
