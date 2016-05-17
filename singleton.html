@@ -59,7 +59,8 @@ public class Singleton {
 
 }
 ```
-
+* 优点：达到了Lazy Loading的效果
+* 缺点：只有在单线程下能保证只有一个实例，多线程下有创建多个实例的风险
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -105,6 +106,11 @@ public class Singleton {
 
 }
 </code></pre>
+
+<ul>
+<li>优点：达到了Lazy Loading的效果</li>
+<li>缺点：只有在单线程下能保证只有一个实例，多线程下有创建多个实例的风险</li>
+</ul>
 <!-- content end -->
 </div>
 <br>
