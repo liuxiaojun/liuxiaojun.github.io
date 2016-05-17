@@ -177,6 +177,66 @@ public class Singleton {
 * 优点：实现简单，无线程同步问题
 * 缺点：在类装载时完成实例化。若该实例一直未被使用，则会造成资源浪费
 
+## 静态代码块 饿汉 可用
+```
+package com.socialmaster.singleton7;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+  
+  static{
+    INSTANCE = new Singleton();
+  }
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    return INSTANCE;
+  }
+
+}
+```
+* 优点：无线程同步问题
+* 缺点：类装载时创建实例，无Lazy Loading。实例一直未被使用时，会浪费资源
+
+## 静态内部类 推荐
+```
+package com.socialmaster.singleton8;
+
+public class Singleton {
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    return InnerClass.INSTANCE;
+  }
+  
+  private static class InnerClass {
+    private static final Singleton INSTANCE = new Singleton();
+  }
+
+}
+```
+* 优点：无线程同步问题，实现了懒加载（Lazy Loading）。因为只有调用getInstance时才会装载内部类，才会创建实例
+* 缺点：NA
+
+## 枚举 不推荐
+```
+package com.socialmaster.singleton9;
+
+public enum Singleton {
+
+  INSTANCE;
+  
+  public void whatSoEverMethod() { }
+
+}
+```
+* 优点：无线程同步问题，且能防止通过反射创建新的对象
+* 缺点：使用的是枚举，而非类。同时单一实例的访问点也不是一般单例模式的静态方法
+
+
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -356,6 +416,74 @@ public class Singleton {
 <ul>
 <li>优点：实现简单，无线程同步问题</li>
 <li>缺点：在类装载时完成实例化。若该实例一直未被使用，则会造成资源浪费</li>
+</ul>
+
+<h2 id="">静态代码块 饿汉 可用</h2>
+
+<pre><code>package com.socialmaster.singleton7;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  static{
+    INSTANCE = new Singleton();
+  }
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    return INSTANCE;
+  }
+
+}
+</code></pre>
+
+<ul>
+<li>优点：无线程同步问题</li>
+<li>缺点：类装载时创建实例，无Lazy Loading。实例一直未被使用时，会浪费资源</li>
+</ul>
+
+<h2 id="">静态内部类 推荐</h2>
+
+<pre><code>package com.socialmaster.singleton8;
+
+public class Singleton {
+
+  private Singleton() {};
+
+  public static Singleton getInstance() {
+    return InnerClass.INSTANCE;
+  }
+
+  private static class InnerClass {
+    private static final Singleton INSTANCE = new Singleton();
+  }
+
+}
+</code></pre>
+
+<ul>
+<li>优点：无线程同步问题，实现了懒加载（Lazy Loading）。因为只有调用getInstance时才会装载内部类，才会创建实例</li>
+<li>缺点：NA</li>
+</ul>
+
+<h2 id="">枚举 不推荐</h2>
+
+<pre><code>package com.socialmaster.singleton9;
+
+public enum Singleton {
+
+  INSTANCE;
+
+  public void whatSoEverMethod() { }
+
+}
+</code></pre>
+
+<ul>
+<li>优点：无线程同步问题，且能防止通过反射创建新的对象</li>
+<li>缺点：使用的是枚举，而非类。同时单一实例的访问点也不是一般单例模式的静态方法</li>
 </ul>
 <!-- content end -->
 </div>
