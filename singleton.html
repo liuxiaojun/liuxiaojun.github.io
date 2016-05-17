@@ -61,6 +61,27 @@ public class Singleton {
 ```
 * 优点：达到了Lazy Loading的效果
 * 缺点：只有在单线程下能保证只有一个实例，多线程下有创建多个实例的风险
+
+##同步方法下的懒汉 - 可用，不推荐
+```
+package com.socialmaster.singleton2;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static synchronized Singleton getInstance() {
+    if (INSTANCE == null) {
+      INSTANCE = new Singleton();
+    }
+    return INSTANCE;
+  }
+}
+```
+* 优点：线程安全，可确保正常使用下（不考虑通过反射调用私有构造方法）只有一个实例
+* 缺点：每次获取实例都需要申请锁，开销大，效率低
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -110,6 +131,30 @@ public class Singleton {
 <ul>
 <li>优点：达到了Lazy Loading的效果</li>
 <li>缺点：只有在单线程下能保证只有一个实例，多线程下有创建多个实例的风险</li>
+</ul>
+
+<h2 id="">同步方法下的懒汉 - 可用，不推荐</h2>
+
+<pre><code>package com.socialmaster.singleton2;
+
+public class Singleton {
+
+  private static Singleton INSTANCE;
+
+  private Singleton() {};
+
+  public static synchronized Singleton getInstance() {
+    if (INSTANCE == null) {
+      INSTANCE = new Singleton();
+    }
+    return INSTANCE;
+  }
+}
+</code></pre>
+
+<ul>
+<li>优点：线程安全，可确保正常使用下（不考虑通过反射调用私有构造方法）只有一个实例</li>
+<li>缺点：每次获取实例都需要申请锁，开销大，效率低</li>
 </ul>
 <!-- content end -->
 </div>
