@@ -41,7 +41,8 @@
 ***
 
 ## 线程不安全的懒汉 - 多线程不可用
-```package com.socialmaster.singleton;
+```
+package com.socialmaster.singleton;
 
 public class Singleton {
 
@@ -56,7 +57,8 @@ public class Singleton {
     return INSTANCE;
   }
 
-}```
+}
+```
 
 <!-- markdown end -->
 </div>
@@ -86,22 +88,23 @@ public class Singleton {
 
 <h2 id="">线程不安全的懒汉 - 多线程不可用</h2>
 
-<p>```package com.socialmaster.singleton;</p>
+<pre><code>package com.socialmaster.singleton;
 
-<p>public class Singleton {</p>
+public class Singleton {
 
-<p>private static Singleton INSTANCE;</p>
+  private static Singleton INSTANCE;
 
-<p>private Singleton() {};</p>
+  private Singleton() {};
 
-<p>public static Singleton getInstance() {
+  public static Singleton getInstance() {
     if (INSTANCE == null) {
       INSTANCE = new Singleton();
     }
     return INSTANCE;
-  }</p>
+  }
 
-<p>}```</p>
+}
+</code></pre>
 <!-- content end -->
 </div>
 <br>
