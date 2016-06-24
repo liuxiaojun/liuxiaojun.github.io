@@ -1,0 +1,413 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+###悲观并发控制
+    * 锁
+
+###乐观并发控制
+    * _version
+         每当有索引操作，无论文档是否有变化，_version增加。
+         PUT /website/blog/1?version=1 {...}
+     
+         只有当version相等时操作（更新、删除）才能成功
+    * 外部版本 version_type
+        PUT /website/blog/2?version=5&version_type=external {...}
+         _version 比制定的数值小时成功
+
+
+###事务日志
+* translog
+    * lunce  的commit操作非常昂贵，不会实时commit
+    * translog 记录在索引上的各种操作，来保证就算没有调用commit操作也能保证数据持久化
+    * 很自然的支持推送复制
+    * 每个不同的shard都拥有transaction log, 如果出错，replay
+    * translog 周期性的将数据刷新（flushed）到磁盘
+    * translog 保证当生成快照（shared gateway snapshot）, 分片恢复， （peer shard  recovery） 或是分片热迁移（shard “hot” relocation）的时候，索引数据不会丢失
+
+* flush api
+    POST /blogs/_flush
+    POST /flush?wait_for_ongoing
+
+    一些配置省去。。。。
+
+###故障探测
+* master fault detection  master定期检测data是否ping
+* node fault detection    data也是否定期检测master
+* 可以设置ping周期 timeout retry重试几次
+
+###Master故障
+* Master选举
+    * ping 出所有的master 候选者
+    * 按nodeId Introsort (内省排序)取第一个
+    * 通知其他节点
+* rebalancing  （分片重新部署到新的节点）
+* 更新cluster state 并同步到其他的节点
+
+###datanode故障
+* master 从cluster state中移除故障节点
+* 如果primary shard丢失，master通知其他节点上对应的replica shard 提升为primary shard
+*  如果replica shard 丢失，master通知对应的primary shard 复制到其他节点生成 replica shard
+* rebalancing
+* master 更新cluster state 并同步到其他节点
+ 
+数据备份和恢复
+* 创建一个仓库（creating the repository）
+```javascript
+PUT http://127.0.0.1:9200/_snapshot/my_backup 
+{
+    "type": "fs", 
+    "settings": {
+        "location": "/mount/backups/my_backup" 
+    }
+}
+```
+上面的代码，我们创建了一个名叫my_backup 的备份，存放在本地的/mount/backups/my_backup 目录下。除了location 参数外，还可以通过max_snapshot_bytes_per_sec 和max_restore_bytes_per_sec 来限制备份和恢复时的速度，如下：
+```
+POST http://127.0.0.1:9200/_snapshot/my_backup/ 
+{
+    "type": "fs",
+    "settings": {
+        "location": "/mount/backups/my_backup",
+        "max_snapshot_bytes_per_sec" : "50mb", 
+        "max_restore_bytes_per_sec" : "50mb"
+    }
+}
+```
+注意：第一段代码用的是PUT 请求，用来创建repository，第二段代码用的是POST 请求，来修改已经存在的repository。
+
+* 备份索引
+仓库创建好之后就可以开始备份了。一个仓库可以包含多个快照（snapshots），快照可以存所有的索引，部分索引或者一个单独的索引。可以给索引指定一个唯一的名字：
+```
+PUT http://127.0.0.1:9200/_snapshot/my_backup/snapshot_1
+```
+上面的代码会将所有正在运行的索引，备份到my_backup仓库下一个叫snapshot_1的快照中。上面的api会立刻返回，然后备份工作在后台运行。如果你想api同步执行，可以加wait_for_completion 标志：
+```
+PUT http://127.0.0.1:9200/_snapshot/my_backup/snapshot_1?wait_for_completion=true
+```
+上面的方法会在备份完成后才返回，如果数据量大的话，会花很长时间。
+如果只想备份部分索引的话，可以加上indices 参数：
+```
+PUT http://127.0.0.1:9200/_snapshot/my_backup/snapshot_2
+{
+    "indices": "index_1,index_2"
+}
+```
+
+* 删除备份
+不要手动删除文件（Elasticsearch一贯主张使用api操作，尤其是大集群中），删除snapshot_2：
+```
+ELETE http://127.0.0.1:9200/_snapshot/my_backup/snapshot_2
+```
+如果备份正在后台进行，也可以直接删除来取消此次备份。
+
+* 查看备份信息
+直接使用GET 请求即可：
+```
+GET http://127.0.0.1:9200/_snapshot/my_backup/snapshot_2
+```
+返回类似下面的值：
+```
+{
+   "snapshots": [
+      {
+         "snapshot": "snapshot_2",
+         "indices": [
+            ".marvel_2014_28_10",
+            "index1",
+            "index2"
+         ],
+         "state": "SUCCESS",
+         "start_time": "2014-09-02T13:01:43.115Z",
+         "start_time_in_millis": 1409662903115,
+         "end_time": "2014-09-02T13:01:43.439Z",
+         "end_time_in_millis": 1409662903439,
+         "duration_in_millis": 324,
+         "failures": [],
+         "shards": {
+            "total": 10,
+            "failed": 0,
+            "successful": 10
+         }
+      }
+   ]
+}
+```
+
+如果要查看所有索引的信息，使用如下api：
+```
+GET http://127.0.0.1:9200/_snapshot/my_backup/_all
+```
+另外还有个一api可以看到更加详细的信息：
+```
+GET http://127.0.0.1:9200/_snapshot/my_backup/snapshot_3/_status
+```
+详细内容可以查看[官方的文档](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/backing-up-your-cluster.html)
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h3 id="">悲观并发控制</h3>
+
+<pre><code>* 锁
+</code></pre>
+
+<h3 id="">乐观并发控制</h3>
+
+<pre><code>* _version
+     每当有索引操作，无论文档是否有变化，_version增加。
+     PUT /website/blog/1?version=1 {...}
+
+     只有当version相等时操作（更新、删除）才能成功
+* 外部版本 version_type
+    PUT /website/blog/2?version=5&amp;version_type=external {...}
+     _version 比制定的数值小时成功
+</code></pre>
+
+<h3 id="">事务日志</h3>
+
+<ul>
+<li><p>translog</p>
+
+<ul><li>lunce  的commit操作非常昂贵，不会实时commit</li>
+<li>translog 记录在索引上的各种操作，来保证就算没有调用commit操作也能保证数据持久化</li>
+<li>很自然的支持推送复制</li>
+<li>每个不同的shard都拥有transaction log, 如果出错，replay</li>
+<li>translog 周期性的将数据刷新（flushed）到磁盘</li>
+<li>translog 保证当生成快照（shared gateway snapshot）, 分片恢复， （peer shard  recovery） 或是分片热迁移（shard “hot” relocation）的时候，索引数据不会丢失</li></ul></li>
+<li><p>flush api
+POST /blogs/<em>flush
+POST /flush?wait</em>for_ongoing</p>
+
+<p>一些配置省去。。。。</p></li>
+</ul>
+
+<h3 id="">故障探测</h3>
+
+<ul>
+<li>master fault detection  master定期检测data是否ping</li>
+<li>node fault detection    data也是否定期检测master</li>
+<li>可以设置ping周期 timeout retry重试几次</li>
+</ul>
+
+<h3 id="master">Master故障</h3>
+
+<ul>
+<li>Master选举
+<ul><li>ping 出所有的master 候选者</li>
+<li>按nodeId Introsort (内省排序)取第一个</li>
+<li>通知其他节点</li></ul></li>
+<li>rebalancing  （分片重新部署到新的节点）</li>
+<li>更新cluster state 并同步到其他的节点</li>
+</ul>
+
+<h3 id="datanode">datanode故障</h3>
+
+<ul>
+<li>master 从cluster state中移除故障节点</li>
+<li>如果primary shard丢失，master通知其他节点上对应的replica shard 提升为primary shard</li>
+<li>如果replica shard 丢失，master通知对应的primary shard 复制到其他节点生成 replica shard</li>
+<li>rebalancing</li>
+<li>master 更新cluster state 并同步到其他节点</li>
+</ul>
+
+<p>数据备份和恢复
+* 创建一个仓库（creating the repository）</p>
+
+<pre><code class="javascript">PUT http://127.0.0.1:9200/_snapshot/my_backup 
+{
+    "type": "fs", 
+    "settings": {
+        "location": "/mount/backups/my_backup" 
+    }
+}
+</code></pre>
+
+<p>上面的代码，我们创建了一个名叫my<em>backup 的备份，存放在本地的/mount/backups/my</em>backup 目录下。除了location 参数外，还可以通过max<em>snapshot</em>bytes<em>per</em>sec 和max<em>restore</em>bytes<em>per</em>sec 来限制备份和恢复时的速度，如下：</p>
+
+<pre><code>POST http://127.0.0.1:9200/_snapshot/my_backup/ 
+{
+    "type": "fs",
+    "settings": {
+        "location": "/mount/backups/my_backup",
+        "max_snapshot_bytes_per_sec" : "50mb", 
+        "max_restore_bytes_per_sec" : "50mb"
+    }
+}
+</code></pre>
+
+<p>注意：第一段代码用的是PUT 请求，用来创建repository，第二段代码用的是POST 请求，来修改已经存在的repository。</p>
+
+<ul>
+<li>备份索引
+仓库创建好之后就可以开始备份了。一个仓库可以包含多个快照（snapshots），快照可以存所有的索引，部分索引或者一个单独的索引。可以给索引指定一个唯一的名字：</li>
+</ul>
+
+<pre><code>PUT http://127.0.0.1:9200/_snapshot/my_backup/snapshot_1
+</code></pre>
+
+<p>上面的代码会将所有正在运行的索引，备份到my<em>backup仓库下一个叫snapshot</em>1的快照中。上面的api会立刻返回，然后备份工作在后台运行。如果你想api同步执行，可以加wait<em>for</em>completion 标志：</p>
+
+<pre><code>PUT http://127.0.0.1:9200/_snapshot/my_backup/snapshot_1?wait_for_completion=true
+</code></pre>
+
+<p>上面的方法会在备份完成后才返回，如果数据量大的话，会花很长时间。
+如果只想备份部分索引的话，可以加上indices 参数：</p>
+
+<pre><code>PUT http://127.0.0.1:9200/_snapshot/my_backup/snapshot_2
+{
+    "indices": "index_1,index_2"
+}
+</code></pre>
+
+<ul>
+<li>删除备份
+不要手动删除文件（Elasticsearch一贯主张使用api操作，尤其是大集群中），删除snapshot_2：</li>
+</ul>
+
+<pre><code>ELETE http://127.0.0.1:9200/_snapshot/my_backup/snapshot_2
+</code></pre>
+
+<p>如果备份正在后台进行，也可以直接删除来取消此次备份。</p>
+
+<ul>
+<li>查看备份信息
+直接使用GET 请求即可：</li>
+</ul>
+
+<pre><code>GET http://127.0.0.1:9200/_snapshot/my_backup/snapshot_2
+</code></pre>
+
+<p>返回类似下面的值：</p>
+
+<pre><code>{
+   "snapshots": [
+      {
+         "snapshot": "snapshot_2",
+         "indices": [
+            ".marvel_2014_28_10",
+            "index1",
+            "index2"
+         ],
+         "state": "SUCCESS",
+         "start_time": "2014-09-02T13:01:43.115Z",
+         "start_time_in_millis": 1409662903115,
+         "end_time": "2014-09-02T13:01:43.439Z",
+         "end_time_in_millis": 1409662903439,
+         "duration_in_millis": 324,
+         "failures": [],
+         "shards": {
+            "total": 10,
+            "failed": 0,
+            "successful": 10
+         }
+      }
+   ]
+}
+</code></pre>
+
+<p>如果要查看所有索引的信息，使用如下api：</p>
+
+<pre><code>GET http://127.0.0.1:9200/_snapshot/my_backup/_all
+</code></pre>
+
+<p>另外还有个一api可以看到更加详细的信息：</p>
+
+<pre><code>GET http://127.0.0.1:9200/_snapshot/my_backup/snapshot_3/_status
+</code></pre>
+
+<p>详细内容可以查看<a href="http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/backing-up-your-cluster.html">官方的文档</a></p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "disaster-recovery.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
