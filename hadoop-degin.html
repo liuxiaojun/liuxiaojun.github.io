@@ -39,7 +39,9 @@ Hadoop实现了一个分布式文件系统HDFS，
 当前hadoop中有两个重大的组件，一个是hdfs，一个是yarn。
 首先现在有各种各样的方式将数据写入到集群中，put ， flume， scribe， kafka等，第二步用yarn资源管理系统来跑各种各样的计算（flink，pig， mr, storm, spark 等），算完之后还得吧数据写入到hdfs中。
 
-* 首先分析下数据的写入， client向namenode说我要写数据，namenode告诉client说你可以往哪里哪里哪里写。
+* 首先分析下数据的写入， client向namenode说我要写数据，namenode告诉client说你可以往哪里哪里哪里写。一般设置三个副本，client拿到消息后，就往第一个写，第一个写完之后往第二个里面写，第二个写完之后就往第三个写。 为啥不同时往三个里面单独写那？原因就是节省client的网络带宽。
+
+
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -62,7 +64,7 @@ Hadoop实现了一个分布式文件系统HDFS，</p>
 首先现在有各种各样的方式将数据写入到集群中，put ， flume， scribe， kafka等，第二步用yarn资源管理系统来跑各种各样的计算（flink，pig， mr, storm, spark 等），算完之后还得吧数据写入到hdfs中。</p>
 
 <ul>
-<li>首先分析下数据的写入， client向namenode说我要写数据，namenode告诉client说你可以往哪里哪里哪里写。</li>
+<li>首先分析下数据的写入， client向namenode说我要写数据，namenode告诉client说你可以往哪里哪里哪里写。一般设置三个副本，client拿到消息后，就往第一个写，第一个写完之后往第二个里面写，第二个写完之后就往第三个写。 为啥不同时往三个里面单独写那？原因就是节省client的网络带宽。</li>
 </ul>
 <!-- content end -->
 </div>
