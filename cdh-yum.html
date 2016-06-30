@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+## 思路
+* 搭建nginx环境
+* 创建本地存储库
+* 外部引用
+
+### 搭建nginx环境
+* rpm -ivh http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+* yum info nginx
+* yum install nginx
+* service nginx start
+
+### 创建本地存储库
+* mkdir -p /usr/share/nginx/html/cdh/5
+* cd /usr/share/nginx/html/cdh/5
+* wget http://archive.cloudera.com/cdh5/redhat/6/x86_64/cdh/cloudera-cdh5.repo
+* mv cloudera-cdh5.repo /etc/yum.repos.d/
+* yum install yum-utils createrepo
+* cp -r cloudera-cdh5/* .
+* rm -rf cloudera-cdh5
+* createrepo .
+
+### 外部引用
+* 在其他机器上创建 xx.repo 文件，参照 cloudera-cdh5.repo ，将里面的baseurl 这行 调整为 baseurl=http://ip/cdh/5/
+* yum update
+* yum 安装其他的吧
+
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="">思路</h2>
+
+<ul>
+<li>搭建nginx环境</li>
+<li>创建本地存储库</li>
+<li>外部引用</li>
+</ul>
+
+<h3 id="nginx">搭建nginx环境</h3>
+
+<ul>
+<li>rpm -ivh http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm</li>
+<li>yum info nginx</li>
+<li>yum install nginx</li>
+<li>service nginx start</li>
+</ul>
+
+<h3 id="">创建本地存储库</h3>
+
+<ul>
+<li>mkdir -p /usr/share/nginx/html/cdh/5</li>
+<li>cd /usr/share/nginx/html/cdh/5</li>
+<li>wget http://archive.cloudera.com/cdh5/redhat/6/x86_64/cdh/cloudera-cdh5.repo</li>
+<li>mv cloudera-cdh5.repo /etc/yum.repos.d/</li>
+<li>yum install yum-utils createrepo</li>
+<li>cp -r cloudera-cdh5/* .</li>
+<li>rm -rf cloudera-cdh5</li>
+<li>createrepo .</li>
+</ul>
+
+<h3 id="">外部引用</h3>
+
+<ul>
+<li>在其他机器上创建 xx.repo 文件，参照 cloudera-cdh5.repo ，将里面的baseurl 这行 调整为 baseurl=http://ip/cdh/5/</li>
+<li>yum update</li>
+<li>yum 安装其他的吧</li>
+</ul>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "cdh-yum.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
