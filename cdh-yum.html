@@ -50,7 +50,8 @@
 * 在其他机器上创建 xx.repo 文件，参照 cloudera-cdh5.repo ，将里面的baseurl 这行 调整为 baseurl=http://ip/cdh/5/
 * yum update
 * yum 安装其他的吧
-
+* 如果源更改需要执行 下面的命令 ： 
+yum clean all && yum clean metadata && yum clean dbcache && yum makecache && yum update
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -91,6 +92,8 @@
 <li>在其他机器上创建 xx.repo 文件，参照 cloudera-cdh5.repo ，将里面的baseurl 这行 调整为 baseurl=http://ip/cdh/5/</li>
 <li>yum update</li>
 <li>yum 安装其他的吧</li>
+<li>如果源更改需要执行 下面的命令 ： 
+yum clean all &amp;&amp; yum clean metadata &amp;&amp; yum clean dbcache &amp;&amp; yum makecache &amp;&amp; yum update</li>
 </ul>
 <!-- content end -->
 </div>
