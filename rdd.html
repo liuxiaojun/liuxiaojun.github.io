@@ -68,6 +68,19 @@ inputRDD在后面的程序中还可以继续使用。
     words.first(); //返回hello
 ```
 
+ 基本RDD转换
+```
+    collect() 返回RDD中的所有元素
+    count() RDD中的元素个数
+    countByValue() 各元素在RDD中出现的次数
+    take(num) 从RDD中返回num个元素
+    top(num) 从RDD中返回最前面的num个元素
+    takeOrdered(num)(ordering) 从RDD中按照提供的顺序返回最前面的num个元素
+    takeSample(withReplacement, num, [seed]) 从RDD中返回一些元素 （非确定的）
+    reduce(func) 并行整合RDD中所有元素 例如sum ， rdd.reduce((x,y)=>x+y)
+    aggregate(zeroValue)(seOp, combOp) 和reduce()相似，但是通常返回不同类型的函数
+    foreach(func) 对RDD中的每个元素使用给定的函数
+```
 
 <!-- markdown end -->
 </div>
@@ -114,6 +127,20 @@ inputRDD在后面的程序中还可以继续使用。</p>
 <pre><code>    val lines = sc.parallelize(List("hello word","hi"))
     val words = lines.flatMap { line =&gt; line.split(" ")}
     words.first(); //返回hello
+</code></pre>
+
+<p>基本RDD转换</p>
+
+<pre><code>    collect() 返回RDD中的所有元素
+    count() RDD中的元素个数
+    countByValue() 各元素在RDD中出现的次数
+    take(num) 从RDD中返回num个元素
+    top(num) 从RDD中返回最前面的num个元素
+    takeOrdered(num)(ordering) 从RDD中按照提供的顺序返回最前面的num个元素
+    takeSample(withReplacement, num, [seed]) 从RDD中返回一些元素 （非确定的）
+    reduce(func) 并行整合RDD中所有元素 例如sum ， rdd.reduce((x,y)=&gt;x+y)
+    aggregate(zeroValue)(seOp, combOp) 和reduce()相似，但是通常返回不同类型的函数
+    foreach(func) 对RDD中的每个元素使用给定的函数
 </code></pre>
 <!-- content end -->
 </div>
