@@ -25,55 +25,91 @@
 	</div>
 <div id="md" style="display: none;">
 <!-- markdown -->
-// 持久化(缓存)
-Spark RDD是惰性求值的，而有时我们希望能多次使用同一个RDD。如果简单地对RDD调用行动操作，Spark每次都会重算RDD以及它的所有依赖。
-      
-        var result = input.map(x => x*x)
-        println(result.count())
-        println(result.collect().mkString())
-        
-为了避免多次计算同一个RDD，可以让Spark对数据进行持久化。当我们让Spark持久化存储一个RDD时，计算出RDD的节点会分别保存它们所求出的分区 数据。如果一个有持久化数据的节点发生故障，Spark会在需要用到缓存的数据时重算丢失的数据分区。  在默认的情况下persist()会把数据以序列化的形式缓存在JVM的zui空间
 
-        在scala中使用persist()
-        import org.apache.spark.store.StorageLevel
-        var result = input.map(x => x*x)
-        result.persist(StorageLevel.DISK_ONLY)
-        println(result.count)
-        println(result.collext().mkString(","))
+Spark RDD 是惰性求值的，而有时我们希望能多次使用同一个RDD。如果简单地对RDD调用行动操作， Spark每次都会重算RDD以及它的所有依赖。这在迭代算法中消耗格外大，因为迭代算法常常会多次使用同一组数据。
+```
+scala> val lines= sc.parallelize(List("pandas","i like pandas"))
+lines: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[0] at parallelize at <console>:27
+scala> val words=lines.flatMap{line=>line.split(" ")}
+words: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[1] at flatMap at <console>:29
+scala> val result=words.map(x=> x+"123")
+result: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[2] at map at <console>:31
+scala> println(result.count)
+4
+scala> println(result.collect().mkString(","))
+pandas123,i123,like123,pandas123
+```
 
-如果缓存中的数据太多，内存中放不下，Spark会自动利用最近使用（LRU）的缓存策略吧最老的分区从内存中移除。
+为了避免多次计算同一个RDD，可以让Spark对数据进行持久化。当我们让Spark持久化存储一个RDD时，计算出RDD的节点会分别保存它们分别所求出的分区数据。如果一个有持久化数据的节点发生故障，Spark会在需要用到缓存的数据时重算丢失的数据分区。如果希望节点故障的情况不会拖累我们的执行速度，也可以吧数据备份到多个节点上。
 
-对于仅把数据存放在内存中的缓存级别，下一次要用到已经被移除的分区时，这些分区就需要重新计算。但是对于使用内存与磁盘的缓存界别的分区来说，被移除的分区都会写入磁盘。
+处于不同的目的，我们可以为RDD选择不同的持久化级别。在Scala和Java中，默认情况下persist()会把数据以序列化的形式缓存在JVM的zui空间中。
 
- 最后RDD还有一个方法叫做unpersist(), 该方法可以手动的吧持久化的RDD从缓存中移除
+在Scala中使用persist()
+```
+import org.apache.spark.storage.StorageLevel
+val result = input.map(x => x*x)
+result.persist(StorageLevel.DISK_ONLY)
+println(result.count())
+println(result.collect.mkString(","))
+```
 
+注意： 我们在第一次对这个RDD调用行动操作前就调用了persist() 方法。persist() 调用本身不会触发强制求值。
+
+如果要缓存的数据太多，内存中放不下，Spark会自动利用最近最少使用的缓存车辆吧最老的分区从内存中移除。对于仅把数据存放在内存中的缓存级别，下一次要用到已经被移除的分区时，这些分区就需要重新计算。但是对于使用内存与磁盘的缓存级别的分区来说，被移除的分区都会写入磁盘。无论哪一种情况，都不必担心你的作业因为缓存了太多数据而被打断。不过，缓存不必要的数据会导致有用的数据被移除内存，带来更多重算的时间开销。
+
+最后，RDD还有一个方法叫做unpersist() ， 调用该方法可以手动吧持久化的RDD从缓存中移除。
+
+| 级别        | 使用的空间     | CPU时间 |  是否在内存中| 是否在磁盘上| 备注 |
+| --------- |:-------------:| -----:|
+| MEMORY_ONLY|高|低|是|否|
+| MEMORY_ONLY_SER |低 | 高|是|否|
+| MEMORY_AND_DISK |高|中等|部分|部分|如果数据在内存中放不下，则溢写到磁盘上。
+|MEMORY_AND_DISK_SER|低|高|部分|部分|如果数据在内存中放不下，则溢写到磁盘上。在内存中存序列化后的数据
+|DISK_ONLY|低|高|否|是
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
 <!-- content -->
-<p>// 持久化(缓存)
-Spark RDD是惰性求值的，而有时我们希望能多次使用同一个RDD。如果简单地对RDD调用行动操作，Spark每次都会重算RDD以及它的所有依赖。</p>
+<p>Spark RDD 是惰性求值的，而有时我们希望能多次使用同一个RDD。如果简单地对RDD调用行动操作， Spark每次都会重算RDD以及它的所有依赖。这在迭代算法中消耗格外大，因为迭代算法常常会多次使用同一组数据。</p>
 
-<pre><code>    var result = input.map(x =&gt; x*x)
-    println(result.count())
-    println(result.collect().mkString())
+<pre><code>scala&gt; val lines= sc.parallelize(List("pandas","i like pandas"))
+lines: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[0] at parallelize at &lt;console&gt;:27
+scala&gt; val words=lines.flatMap{line=&gt;line.split(" ")}
+words: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[1] at flatMap at &lt;console&gt;:29
+scala&gt; val result=words.map(x=&gt; x+"123")
+result: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[2] at map at &lt;console&gt;:31
+scala&gt; println(result.count)
+4
+scala&gt; println(result.collect().mkString(","))
+pandas123,i123,like123,pandas123
 </code></pre>
 
-<p>为了避免多次计算同一个RDD，可以让Spark对数据进行持久化。当我们让Spark持久化存储一个RDD时，计算出RDD的节点会分别保存它们所求出的分区 数据。如果一个有持久化数据的节点发生故障，Spark会在需要用到缓存的数据时重算丢失的数据分区。  在默认的情况下persist()会把数据以序列化的形式缓存在JVM的zui空间</p>
+<p>为了避免多次计算同一个RDD，可以让Spark对数据进行持久化。当我们让Spark持久化存储一个RDD时，计算出RDD的节点会分别保存它们分别所求出的分区数据。如果一个有持久化数据的节点发生故障，Spark会在需要用到缓存的数据时重算丢失的数据分区。如果希望节点故障的情况不会拖累我们的执行速度，也可以吧数据备份到多个节点上。</p>
 
-<pre><code>    在scala中使用persist()
-    import org.apache.spark.store.StorageLevel
-    var result = input.map(x =&gt; x*x)
-    result.persist(StorageLevel.DISK_ONLY)
-    println(result.count)
-    println(result.collext().mkString(","))
+<p>处于不同的目的，我们可以为RDD选择不同的持久化级别。在Scala和Java中，默认情况下persist()会把数据以序列化的形式缓存在JVM的zui空间中。</p>
+
+<p>在Scala中使用persist()</p>
+
+<pre><code>import org.apache.spark.storage.StorageLevel
+val result = input.map(x =&gt; x*x)
+result.persist(StorageLevel.DISK_ONLY)
+println(result.count())
+println(result.collect.mkString(","))
 </code></pre>
 
-<p>如果缓存中的数据太多，内存中放不下，Spark会自动利用最近使用（LRU）的缓存策略吧最老的分区从内存中移除。</p>
+<p>注意： 我们在第一次对这个RDD调用行动操作前就调用了persist() 方法。persist() 调用本身不会触发强制求值。</p>
 
-<p>对于仅把数据存放在内存中的缓存级别，下一次要用到已经被移除的分区时，这些分区就需要重新计算。但是对于使用内存与磁盘的缓存界别的分区来说，被移除的分区都会写入磁盘。</p>
+<p>如果要缓存的数据太多，内存中放不下，Spark会自动利用最近最少使用的缓存车辆吧最老的分区从内存中移除。对于仅把数据存放在内存中的缓存级别，下一次要用到已经被移除的分区时，这些分区就需要重新计算。但是对于使用内存与磁盘的缓存级别的分区来说，被移除的分区都会写入磁盘。无论哪一种情况，都不必担心你的作业因为缓存了太多数据而被打断。不过，缓存不必要的数据会导致有用的数据被移除内存，带来更多重算的时间开销。</p>
 
-<p>最后RDD还有一个方法叫做unpersist(), 该方法可以手动的吧持久化的RDD从缓存中移除</p>
+<p>最后，RDD还有一个方法叫做unpersist() ， 调用该方法可以手动吧持久化的RDD从缓存中移除。</p>
+
+<p>| 级别        | 使用的空间     | CPU时间 |  是否在内存中| 是否在磁盘上| 备注 |
+| --------- |:-------------:| -----:|
+| MEMORY<em>ONLY|高|低|是|否|
+| MEMORY</em>ONLY<em>SER |低 | 高|是|否|
+| MEMORY</em>AND<em>DISK |高|中等|部分|部分|如果数据在内存中放不下，则溢写到磁盘上。
+|MEMORY</em>AND<em>DISK</em>SER|低|高|部分|部分|如果数据在内存中放不下，则溢写到磁盘上。在内存中存序列化后的数据
+|DISK_ONLY|低|高|否|是</p>
 <!-- content end -->
 </div>
 <br>
