@@ -1,0 +1,172 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+## 数据抽取方式
+抽取数据是ETL处理过程中的第一个步骤，也是数据仓库中最重要和最具挑战性的部分，适当的数据抽取是成功建立数据仓库的关键。
+
+### 需要抽取哪部分源数据加载到数据仓库？ 有两种可选方式，完全抽取和变化数据捕获。
+
+如果数据量较小并且易处理，一般来说采取完全源数据抽取，就是讲所有的文件记录或所有数据库表抽取至数据仓库。这种方式适合基础编码类型的源数据，
+比如邮政编码／学历／民族 等。 
+基础编码型数据通常是维度表的数据来源，如果源数据很大，抽取全部数据是不可行的，那么只能抽取变化的数据源，即最后一次抽取以来发生了变化的数据。
+这种数据抽取模式称为变化数据捕获，常被用于抽取操作性系统的事务数据，比如销售订单，用户注册，或各种类型的应用日志记录等。
+
+
+#### 获取变化的数据
+* 基于时间戳
+这种方法最好是有两个时间戳，一个是插入时间，另外一个是更新时间。
+* 基于主键自增
+大多数据库系统提供自增功能，在抽取的时间将抽取后的游标记录在某一个位置，下次抽取从这个位置以后仅从操作。
+* 基于触发器
+当执行insert，update，delete这些SQL语句时，可以激活数据库里的触发器并执行一些动作，就是说触发器可以捕获变更的数据并把数据保存到中间
+临时表里。然后这些变更的数据再从临时表中取出，被抽取到数据仓库的过渡区里。在大多数的情况下不允许这么来干，影响线上数据库的性能。有的做法是创建
+从库，从从库上面创建触发器来实现。
+* 基于快照
+如果没有时间戳，也不允许使用触发器，就要使用快照表了。可以通过比较源表和快照表来获取数据变化。快照就是一次性取源数据系统的全部数据，吧这些数据装载到
+数据仓库的过渡区。下次需要同步时，再从源数据系统中抽取全部数据，并吧这些全部数据也放到数据仓库的过渡区，作为表的第二个版本，然后比较这两个版本的数据，
+从而找到变化
+* 基于日志
+数据库会把每个插入,更新，删除操作记录在日志里。如果使用MySQL数据库，只要在数据库服务器中启用二进制日志，就可以实时从数据库日志中读取到所有数据库写操作，
+并使用这些操作来更新数据仓库中的数据。使用的工具mysqlbinlog，cancl等。
+
+
+### 数据抽取的方向是什么？ 有两种方式，拉模式，即数据仓库主动去源系统拉取数据； 推模式，由源系统将自己的数据推送给数据仓库。
+
+对于第二个问题来说，通常要改变或增加业务系统的功能是非常困难的，这种困难不仅是技术上的，还有来自业务系统用户及其开发者的阻力。
+理论上讲，数据仓库不应该要求业务系统做任何改造，实际上也很少由业务系统推数据到数据仓库。 因此这个问题的答案也比较明确，大都采用
+拉数据模式。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="">数据抽取方式</h2>
+
+<p>抽取数据是ETL处理过程中的第一个步骤，也是数据仓库中最重要和最具挑战性的部分，适当的数据抽取是成功建立数据仓库的关键。</p>
+
+<h3 id="">需要抽取哪部分源数据加载到数据仓库？ 有两种可选方式，完全抽取和变化数据捕获。</h3>
+
+<p>如果数据量较小并且易处理，一般来说采取完全源数据抽取，就是讲所有的文件记录或所有数据库表抽取至数据仓库。这种方式适合基础编码类型的源数据，
+比如邮政编码／学历／民族 等。 
+基础编码型数据通常是维度表的数据来源，如果源数据很大，抽取全部数据是不可行的，那么只能抽取变化的数据源，即最后一次抽取以来发生了变化的数据。
+这种数据抽取模式称为变化数据捕获，常被用于抽取操作性系统的事务数据，比如销售订单，用户注册，或各种类型的应用日志记录等。</p>
+
+<h4 id="">获取变化的数据</h4>
+
+<ul>
+<li>基于时间戳
+这种方法最好是有两个时间戳，一个是插入时间，另外一个是更新时间。</li>
+<li>基于主键自增
+大多数据库系统提供自增功能，在抽取的时间将抽取后的游标记录在某一个位置，下次抽取从这个位置以后仅从操作。</li>
+<li>基于触发器
+当执行insert，update，delete这些SQL语句时，可以激活数据库里的触发器并执行一些动作，就是说触发器可以捕获变更的数据并把数据保存到中间
+临时表里。然后这些变更的数据再从临时表中取出，被抽取到数据仓库的过渡区里。在大多数的情况下不允许这么来干，影响线上数据库的性能。有的做法是创建
+从库，从从库上面创建触发器来实现。</li>
+<li>基于快照
+如果没有时间戳，也不允许使用触发器，就要使用快照表了。可以通过比较源表和快照表来获取数据变化。快照就是一次性取源数据系统的全部数据，吧这些数据装载到
+数据仓库的过渡区。下次需要同步时，再从源数据系统中抽取全部数据，并吧这些全部数据也放到数据仓库的过渡区，作为表的第二个版本，然后比较这两个版本的数据，
+从而找到变化</li>
+<li>基于日志
+数据库会把每个插入,更新，删除操作记录在日志里。如果使用MySQL数据库，只要在数据库服务器中启用二进制日志，就可以实时从数据库日志中读取到所有数据库写操作，
+并使用这些操作来更新数据仓库中的数据。使用的工具mysqlbinlog，cancl等。</li>
+</ul>
+
+<h3 id="">数据抽取的方向是什么？ 有两种方式，拉模式，即数据仓库主动去源系统拉取数据； 推模式，由源系统将自己的数据推送给数据仓库。</h3>
+
+<p>对于第二个问题来说，通常要改变或增加业务系统的功能是非常困难的，这种困难不仅是技术上的，还有来自业务系统用户及其开发者的阻力。
+理论上讲，数据仓库不应该要求业务系统做任何改造，实际上也很少由业务系统推数据到数据仓库。 因此这个问题的答案也比较明确，大都采用
+拉数据模式。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "data-extract.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
