@@ -1,0 +1,177 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+
+## 简介
+Sqoop是一个在Hadoop与结构化数据存储（如关系数据库）之间高效传输大批量数据的工具。
+
+第一代Sqoop的设计目标很简单：
+* 在企业级数据仓库／关系数据库／文档系统和HDFS／HBase或Hive之间导入导出数据
+* 基于客户端的模型
+* 连接器使用厂商提供的驱动
+* 没有集中的元数据的存储
+* 只有Map任务，没有reduce任务，数据传输和转化都由Mappers提供
+* 可以使用Ooize调度和管理Sqoop作业
+
+Sqoop1是由Java开发的，完全客户端驱动，严重依赖于JDBC，可以使用简单的命令行导入导出数据。例如
+```
+# 把MySQL中testdb.PERSON表的数据导入HDFS
+sqoop import --connect jdbc:mysql://localhost/testdb --table PERSON --username test --password *******
+```
+上面这条命令形成一系列任务：
+* 生成MySQL的SQL代码
+* 执行MySQL的SQL代码
+* 生成Map作业
+* 执行Map作业
+* 数据传输到HDFS
+
+
+```
+# 将HDFS上 /user/localadmin/CLIENTS目录下文件导出到MySQL的testdb.CLIENTS_INTG表中
+sqoop import --connect jdbc:mysql://localhost/testdb --table CLIENTS_INTG --username test --password ******* --export-dir /user/localadmin/CLIENTS
+```
+上面这条命令形成一系列的任务：
+* 生成Map作业
+* 执行Map作业
+* 从HDFS的/user/localadmin/CLIENTS路径传输数据
+* 生成MySQL的SQL代码
+* 向MySQL的testdb.CLIENTS_INTG表插入数据
+
+Sqoop1有很多简单易用的特性，如可以在命令行指定直接导入至Hive或HDFS。连接器可以连接大部分流行的数据库：Oracle,SQLServer,MySQL,Teradata,PostgreSQL等。 Sqoop1的主要问题包括： 繁多的命令行参数，不安全的连接方式，如直接在命令行写密码等，没有源数据存储，只能本地配置和管理，使复用受到限制。
+
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="">简介</h2>
+
+<p>Sqoop是一个在Hadoop与结构化数据存储（如关系数据库）之间高效传输大批量数据的工具。</p>
+
+<p>第一代Sqoop的设计目标很简单：
+* 在企业级数据仓库／关系数据库／文档系统和HDFS／HBase或Hive之间导入导出数据
+* 基于客户端的模型
+* 连接器使用厂商提供的驱动
+* 没有集中的元数据的存储
+* 只有Map任务，没有reduce任务，数据传输和转化都由Mappers提供
+* 可以使用Ooize调度和管理Sqoop作业</p>
+
+<p>Sqoop1是由Java开发的，完全客户端驱动，严重依赖于JDBC，可以使用简单的命令行导入导出数据。例如</p>
+
+<pre><code># 把MySQL中testdb.PERSON表的数据导入HDFS
+sqoop import --connect jdbc:mysql://localhost/testdb --table PERSON --username test --password *******
+</code></pre>
+
+<p>上面这条命令形成一系列任务：
+* 生成MySQL的SQL代码
+* 执行MySQL的SQL代码
+* 生成Map作业
+* 执行Map作业
+* 数据传输到HDFS</p>
+
+<pre><code># 将HDFS上 /user/localadmin/CLIENTS目录下文件导出到MySQL的testdb.CLIENTS_INTG表中
+sqoop import --connect jdbc:mysql://localhost/testdb --table CLIENTS_INTG --username test --password ******* --export-dir /user/localadmin/CLIENTS
+</code></pre>
+
+<p>上面这条命令形成一系列的任务：
+* 生成Map作业
+* 执行Map作业
+* 从HDFS的/user/localadmin/CLIENTS路径传输数据
+* 生成MySQL的SQL代码
+* 向MySQL的testdb.CLIENTS_INTG表插入数据</p>
+
+<p>Sqoop1有很多简单易用的特性，如可以在命令行指定直接导入至Hive或HDFS。连接器可以连接大部分流行的数据库：Oracle,SQLServer,MySQL,Teradata,PostgreSQL等。 Sqoop1的主要问题包括： 繁多的命令行参数，不安全的连接方式，如直接在命令行写密码等，没有源数据存储，只能本地配置和管理，使复用受到限制。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "sqoop.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
