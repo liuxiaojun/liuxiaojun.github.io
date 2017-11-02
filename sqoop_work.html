@@ -25,8 +25,6 @@
 	</div>
 <div id="md" style="display: none;">
 <!-- markdown -->
-
-
 Sqoop是用Java语言编写的。Java提供了一个JDBC的API，应用程序可以使用这个API来访问存储在RDBMS中的数据以及检查数据的性质和类型。
 
 在开始导入之前,Sqoop使用JDBC来检查将要导入的表。它检索出表中所有的列以及列的SQL数据类型。这些SQL类型(varchar,integer等)被映射到Java数据类型（String/Integer等），在MapReduce应用中将使用这些对应的Java类型来保存字段的值。Sqoop的代码生成器使用这些信息来创建对应的表，用于保存从表中抽取的记录。
