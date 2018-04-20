@@ -35,7 +35,40 @@ Hive已经支持完整的ACID特性的事务语句，因此功能得到了扩展
 * 数据修正。
 
 Hive0.14后开始支持事务，但默认是不支持的，需要一些附加的配置。
-1. TODO
+1. 编辑hive-site.xml 配置文件，添加支持事务的属性
+```
+<!-- 添加如下6个属性以支持事务-->
+<property>
+    <name>hive.support.concurrency</name>
+    <value>true</value>
+</property>
+<property>
+    <name>hive.exec.dynamic.partition.mode</name>
+    <value>nonstric</value>
+</property>
+<property>
+    <name>hive.txn.manager</name>
+    <value>org.apache.hadoop.hive.ql.lockmgr.DbTxnManager</value>
+</property>
+<property>
+    <name>hive.compactor.initiator.on</name>
+    <value>true</value>
+</property>
+<property>
+    <name>hive.compactor.worker.threads</name>
+    <value>1</value>
+</property>
+<property>
+    <name>hive.enforce.bucketing</name>
+    <value>true</value>
+</property>
+```
+各个属性的说明如下：
+* hive.support.concurrency : 默认值为false，0.7.0版本新增
+指示Hive是否支持并发。为了支持insert... values、update、delete事务，该值需要设置为true
+* hive.exec.dynamic.partition.mode ： 默认值为strict, 0.6.0版本新增。
+如果设置为strict，向分区表装载数据时，为了防止用户意外覆盖所有分区，必须指定一个静态分区。如果设置为nonstrict，则所有分区都允许动态生成。为了支持事务，必须指定为nonstrict
+* hive.txn.manager：默认值为TODO
 2.
 <!-- markdown end -->
 </div>
@@ -51,7 +84,41 @@ Hive0.14后开始支持事务，但默认是不支持的，需要一些附加的
 * 数据修正。</p>
 
 <p>Hive0.14后开始支持事务，但默认是不支持的，需要一些附加的配置。
-1. TODO
+1. 编辑hive-site.xml 配置文件，添加支持事务的属性</p>
+
+<pre><code>&lt;!-- 添加如下6个属性以支持事务--&gt;
+&lt;property&gt;
+    &lt;name&gt;hive.support.concurrency&lt;/name&gt;
+    &lt;value&gt;true&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+    &lt;name&gt;hive.exec.dynamic.partition.mode&lt;/name&gt;
+    &lt;value&gt;nonstric&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+    &lt;name&gt;hive.txn.manager&lt;/name&gt;
+    &lt;value&gt;org.apache.hadoop.hive.ql.lockmgr.DbTxnManager&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+    &lt;name&gt;hive.compactor.initiator.on&lt;/name&gt;
+    &lt;value&gt;true&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+    &lt;name&gt;hive.compactor.worker.threads&lt;/name&gt;
+    &lt;value&gt;1&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+    &lt;name&gt;hive.enforce.bucketing&lt;/name&gt;
+    &lt;value&gt;true&lt;/value&gt;
+&lt;/property&gt;
+</code></pre>
+
+<p>各个属性的说明如下：
+* hive.support.concurrency : 默认值为false，0.7.0版本新增
+指示Hive是否支持并发。为了支持insert... values、update、delete事务，该值需要设置为true
+* hive.exec.dynamic.partition.mode ： 默认值为strict, 0.6.0版本新增。
+如果设置为strict，向分区表装载数据时，为了防止用户意外覆盖所有分区，必须指定一个静态分区。如果设置为nonstrict，则所有分区都允许动态生成。为了支持事务，必须指定为nonstrict
+* hive.txn.manager：默认值为TODO
 2.</p>
 <!-- content end -->
 </div>
