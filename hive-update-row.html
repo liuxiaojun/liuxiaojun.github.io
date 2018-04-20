@@ -1,0 +1,124 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+HDFS是一个不可更新的文件系统，其中只能创建、删除文件或目录，文件一旦创建，只能从它的末尾追加数据，已存在的数据不能修改。Hive以HDFS为基础，Hive表中的数据最终会物理存储在HDFS上，因此原生的Hive不支持insert...values、update、delete等事务处理或行更新的。这种情况直到Hive0.14才有所改变，该版本具有一定的事务处理能力，在此基础上支持行级数据更新。
+
+为了在HDFS上支持事务，Hive将表或分区的数据存储在基础文件中，而将新增的、修改的、删除的记录存储在一种称为delta的文件中。每个事务都将产生一系列dalta文件。在读取数据的时候hive会合并基础文件和delta文件，将更新和删除的操作应用到基础文件中。
+
+Hive已经支持完整的ACID特性的事务语句，因此功能得到了扩展，增加了一下使用场景：
+* 获得数据流。很多用户在Hadoop集群中使用了诸如Hadoop Flume，Apache Storm或者 Apache Kafka进行流数据处理。这些工具每秒可能写数百行甚至更多的数据。
+* 处理渐变维。在一个典型的星型模式数据仓库中，维度表随时间的变化很缓慢。
+* 数据修正。
+
+Hive0.14后开始支持事务，但默认是不支持的，需要一些附加的配置。
+1. TODO
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>HDFS是一个不可更新的文件系统，其中只能创建、删除文件或目录，文件一旦创建，只能从它的末尾追加数据，已存在的数据不能修改。Hive以HDFS为基础，Hive表中的数据最终会物理存储在HDFS上，因此原生的Hive不支持insert...values、update、delete等事务处理或行更新的。这种情况直到Hive0.14才有所改变，该版本具有一定的事务处理能力，在此基础上支持行级数据更新。</p>
+
+<p>为了在HDFS上支持事务，Hive将表或分区的数据存储在基础文件中，而将新增的、修改的、删除的记录存储在一种称为delta的文件中。每个事务都将产生一系列dalta文件。在读取数据的时候hive会合并基础文件和delta文件，将更新和删除的操作应用到基础文件中。</p>
+
+<p>Hive已经支持完整的ACID特性的事务语句，因此功能得到了扩展，增加了一下使用场景：
+* 获得数据流。很多用户在Hadoop集群中使用了诸如Hadoop Flume，Apache Storm或者 Apache Kafka进行流数据处理。这些工具每秒可能写数百行甚至更多的数据。
+* 处理渐变维。在一个典型的星型模式数据仓库中，维度表随时间的变化很缓慢。
+* 数据修正。</p>
+
+<p>Hive0.14后开始支持事务，但默认是不支持的，需要一些附加的配置。
+1. TODO</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "hive-update-row.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
