@@ -1,0 +1,209 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+Hive On HBase
+
+Hive集成HBase可以有效利用HBase数据库的存储特性，如行更新和列索引等。在集成的过程中注意维持HBase jar包的一致性。Hive与HBase的整合功能的实现是利用两者本身对外的API接口互相进行通信，相互通信主要是依靠hive_hbase-handler.jar工具类。
+
+## 测试
+* 构建Hbase表hbase_student
+```
+hbase> create 'hbase_student', 'info'
+```
+
+* 构建hive外表hive_student, 并对应hbase_student表
+Hive集成HBase需要在Hive表和HBase表之间建立映射关系，也就是Hive表的列(columns)和列类型(column types)与HBase表的列族(column families)及列限定词(column qualifiers)建立关联。
+HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列族中的列在Hive中为 cf:q
+```
+CREATE EXTERNAL TABLE hive_student (rowkey string, name string, age int, phone string)
+    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+    WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age,info:phone")
+    TBLPROPERTIES("hbase.table.name" = "hbase_student"); 
+```
+
+## 导数和验证
+* 创建数据外表data_student
+```
+CREATE EXTERNAL TABLE data_student (rowkey string, name string, age int, phone string)
+　　ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
+　　LOCATION '/test/hbase/tsv/input/';
+```
+
+* 数据通过hive_student导入到hbase_student表中
+```
+SET hive.hbase.bulk=true;
+INSERT OVERWRITE TABLE hive_student SELECT rowkey, name, age, phone FROM data_student;
+```
+
+## 优化和调整
+* 数据表结构调整，关闭cache 
+```
+alter 'fact_mbk_card_a_d_ex', {NAME => 'if', BLOCKCACHE => 'false'} 
+
+```
+
+* 抽数代码参数调整
+```
+SET hbase.scan.cache=10000; set mapred.map.tasks.speculative.execution = false; set hbase.client.scanner.caching = 100000; set hive.metastore.client.socket.timeout=500; set hive.exec.compress.output=true; set hive.hbase.bulk=true; set hive.hbase.wal.enabled=false; 
+```
+
+
+
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>Hive On HBase</p>
+
+<p>Hive集成HBase可以有效利用HBase数据库的存储特性，如行更新和列索引等。在集成的过程中注意维持HBase jar包的一致性。Hive与HBase的整合功能的实现是利用两者本身对外的API接口互相进行通信，相互通信主要是依靠hive_hbase-handler.jar工具类。</p>
+
+<h2 id="">测试</h2>
+
+<ul>
+<li>构建Hbase表hbase_student</li>
+</ul>
+
+<pre><code>hbase&gt; create 'hbase_student', 'info'
+</code></pre>
+
+<ul>
+<li>构建hive外表hive<em>student, 并对应hbase</em>student表
+Hive集成HBase需要在Hive表和HBase表之间建立映射关系，也就是Hive表的列(columns)和列类型(column types)与HBase表的列族(column families)及列限定词(column qualifiers)建立关联。
+HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列族中的列在Hive中为 cf:q</li>
+</ul>
+
+<pre><code>CREATE EXTERNAL TABLE hive_student (rowkey string, name string, age int, phone string)
+    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+    WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age,info:phone")
+    TBLPROPERTIES("hbase.table.name" = "hbase_student"); 
+</code></pre>
+
+<h2 id="">导数和验证</h2>
+
+<ul>
+<li>创建数据外表data_student</li>
+</ul>
+
+<pre><code>CREATE EXTERNAL TABLE data_student (rowkey string, name string, age int, phone string)
+　　ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
+　　LOCATION '/test/hbase/tsv/input/';
+</code></pre>
+
+<ul>
+<li>数据通过hive<em>student导入到hbase</em>student表中</li>
+</ul>
+
+<pre><code>SET hive.hbase.bulk=true;
+INSERT OVERWRITE TABLE hive_student SELECT rowkey, name, age, phone FROM data_student;
+</code></pre>
+
+<h2 id="">优化和调整</h2>
+
+<ul>
+<li>数据表结构调整，关闭cache </li>
+</ul>
+
+<pre><code>alter 'fact_mbk_card_a_d_ex', {NAME =&gt; 'if', BLOCKCACHE =&gt; 'false'} 
+</code></pre>
+
+<ul>
+<li>抽数代码参数调整</li>
+</ul>
+
+<pre><code>SET hbase.scan.cache=10000; set mapred.map.tasks.speculative.execution = false; set hbase.client.scanner.caching = 100000; set hive.metastore.client.socket.timeout=500; set hive.exec.compress.output=true; set hive.hbase.bulk=true; set hive.hbase.wal.enabled=false; 
+</code></pre>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "hive-on-hbase.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
