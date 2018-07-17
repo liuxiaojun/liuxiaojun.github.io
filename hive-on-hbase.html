@@ -68,7 +68,12 @@ alter 'fact_mbk_card_a_d_ex', {NAME => 'if', BLOCKCACHE => 'false'}
 
 * 抽数代码参数调整
 ```
-SET hbase.scan.cache=10000; set mapred.map.tasks.speculative.execution = false; set hbase.client.scanner.caching = 100000; set hive.metastore.client.socket.timeout=500; set hive.exec.compress.output=true; set hive.hbase.bulk=true; set hive.hbase.wal.enabled=false; 
+SET hbase.scan.cache=10000; 
+set mapred.map.tasks.speculative.execution = false; 
+set hbase.client.scanner.caching = 100000; 
+set hive.metastore.client.socket.timeout=500; 
+set hive.exec.compress.output=true; set hive.hbase.bulk=true; 
+set hive.hbase.wal.enabled=false; 
 ```
 
 
@@ -134,7 +139,12 @@ INSERT OVERWRITE TABLE hive_student SELECT rowkey, name, age, phone FROM data_st
 <li>抽数代码参数调整</li>
 </ul>
 
-<pre><code>SET hbase.scan.cache=10000; set mapred.map.tasks.speculative.execution = false; set hbase.client.scanner.caching = 100000; set hive.metastore.client.socket.timeout=500; set hive.exec.compress.output=true; set hive.hbase.bulk=true; set hive.hbase.wal.enabled=false; 
+<pre><code>SET hbase.scan.cache=10000; 
+set mapred.map.tasks.speculative.execution = false; 
+set hbase.client.scanner.caching = 100000; 
+set hive.metastore.client.socket.timeout=500; 
+set hive.exec.compress.output=true; set hive.hbase.bulk=true; 
+set hive.hbase.wal.enabled=false; 
 </code></pre>
 <!-- content end -->
 </div>
