@@ -35,7 +35,7 @@ Hive集成HBase可以有效利用HBase数据库的存储特性，如行更新和
 hbase> create 'hbase_student', 'info'
 ```
 
-* 构建hive外表hive_student, 并对应hbase_student表
+* 构建hive外表hive student, 并对应hbase student表
 Hive集成HBase需要在Hive表和HBase表之间建立映射关系，也就是Hive表的列(columns)和列类型(column types)与HBase表的列族(column families)及列限定词(column qualifiers)建立关联。
 HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列族中的列在Hive中为 cf:q
 ```
@@ -97,7 +97,7 @@ set hive.hbase.wal.enabled=false;
 </code></pre>
 
 <ul>
-<li>构建hive外表hive<em>student, 并对应hbase</em>student表
+<li>构建hive外表hive student, 并对应hbase student表
 Hive集成HBase需要在Hive表和HBase表之间建立映射关系，也就是Hive表的列(columns)和列类型(column types)与HBase表的列族(column families)及列限定词(column qualifiers)建立关联。
 HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列族中的列在Hive中为 cf:q</li>
 </ul>
