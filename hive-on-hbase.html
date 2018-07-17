@@ -40,17 +40,17 @@ Hive集成HBase需要在Hive表和HBase表之间建立映射关系，也就是Hi
 HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列族中的列在Hive中为 cf:q
 ```
 CREATE EXTERNAL TABLE hive_student (rowkey string, name string, age int, phone string)
-    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
-    WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age,info:phone")
-    TBLPROPERTIES("hbase.table.name" = "hbase_student"); 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age,info:phone")
+TBLPROPERTIES("hbase.table.name" = "hbase_student"); 
 ```
 
 ## 导数和验证
 * 创建数据外表data_student
 ```
 CREATE EXTERNAL TABLE data_student (rowkey string, name string, age int, phone string)
-　　ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
-　　LOCATION '/test/hbase/tsv/input/';
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
+LOCATION '/test/hbase/tsv/input/';
 ```
 
 * 数据通过hive_student导入到hbase_student表中
@@ -72,7 +72,8 @@ SET hbase.scan.cache=10000;
 set mapred.map.tasks.speculative.execution = false; 
 set hbase.client.scanner.caching = 100000; 
 set hive.metastore.client.socket.timeout=500; 
-set hive.exec.compress.output=true; set hive.hbase.bulk=true; 
+set hive.exec.compress.output=true; 
+set hive.hbase.bulk=true; 
 set hive.hbase.wal.enabled=false; 
 ```
 
@@ -102,9 +103,9 @@ HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列�
 </ul>
 
 <pre><code>CREATE EXTERNAL TABLE hive_student (rowkey string, name string, age int, phone string)
-    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
-    WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age,info:phone")
-    TBLPROPERTIES("hbase.table.name" = "hbase_student"); 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age,info:phone")
+TBLPROPERTIES("hbase.table.name" = "hbase_student"); 
 </code></pre>
 
 <h2 id="">导数和验证</h2>
@@ -114,8 +115,8 @@ HBase中的RowKey对应到Hive中为选择一个域使用 :key 来对应，列�
 </ul>
 
 <pre><code>CREATE EXTERNAL TABLE data_student (rowkey string, name string, age int, phone string)
-　　ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
-　　LOCATION '/test/hbase/tsv/input/';
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
+LOCATION '/test/hbase/tsv/input/';
 </code></pre>
 
 <ul>
@@ -143,7 +144,8 @@ INSERT OVERWRITE TABLE hive_student SELECT rowkey, name, age, phone FROM data_st
 set mapred.map.tasks.speculative.execution = false; 
 set hbase.client.scanner.caching = 100000; 
 set hive.metastore.client.socket.timeout=500; 
-set hive.exec.compress.output=true; set hive.hbase.bulk=true; 
+set hive.exec.compress.output=true; 
+set hive.hbase.bulk=true; 
 set hive.hbase.wal.enabled=false; 
 </code></pre>
 <!-- content end -->
