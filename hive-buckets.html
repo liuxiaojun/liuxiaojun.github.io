@@ -58,6 +58,39 @@ PARTITIONED BY (start_date string)
  INTO 16 BUCKETS
  STORED AS ORC tblproperties("parquet.compress"="SNAPPY");
 ```
+
+```
+分桶表示例：
+ 
+#创建分桶表
+drop table stu_buck;
+create table stu_buck(Sno int,Sname string,Sex string,Sage int,Sdept string)
+clustered by(Sno) 
+sorted by(Sno DESC)
+into 4 buckets
+row format delimited
+fields terminated by ',';
+ 
+ 
+#设置变量,设置分桶为true, 设置reduce数量是分桶的数量个数
+set hive.enforce.bucketing = true;
+set mapreduce.job.reduces=4;
+ 
+ 
+insert overwrite table student_buck
+select * from student cluster by(Sno) sort by(Sage);  报错,cluster 和 sort 不能共存
+ 
+ 
+#开会往创建的分通表插入数据(插入数据需要是已分桶, 且排序的)
+#可以使用distribute by(sno) sort by(sno asc)   或是排序和分桶的字段相同的时候使用Cluster by(字段)
+#注意使用cluster by  就等同于分桶+排序(sort)
+insert into table stu_buck
+select Sno,Sname,Sex,Sage,Sdept from student distribute by(Sno) sort by(Sno asc);
+ 
+insert overwrite table stu_buck
+select * from student distribute by(Sno) sort by(Sno asc);
+ 
+```
 <!-- markdown end -->
 </div>
 <div class="entry" id="main">
@@ -97,6 +130,37 @@ PARTITIONED BY (start_date string)
  CLUSTERED BY (start_time)
  INTO 16 BUCKETS
  STORED AS ORC tblproperties("parquet.compress"="SNAPPY");
+</code></pre>
+
+<pre><code>分桶表示例：
+
+#创建分桶表
+drop table stu_buck;
+create table stu_buck(Sno int,Sname string,Sex string,Sage int,Sdept string)
+clustered by(Sno) 
+sorted by(Sno DESC)
+into 4 buckets
+row format delimited
+fields terminated by ',';
+
+
+#设置变量,设置分桶为true, 设置reduce数量是分桶的数量个数
+set hive.enforce.bucketing = true;
+set mapreduce.job.reduces=4;
+
+
+insert overwrite table student_buck
+select * from student cluster by(Sno) sort by(Sage);  报错,cluster 和 sort 不能共存
+
+
+#开会往创建的分通表插入数据(插入数据需要是已分桶, 且排序的)
+#可以使用distribute by(sno) sort by(sno asc)   或是排序和分桶的字段相同的时候使用Cluster by(字段)
+#注意使用cluster by  就等同于分桶+排序(sort)
+insert into table stu_buck
+select Sno,Sname,Sex,Sage,Sdept from student distribute by(Sno) sort by(Sno asc);
+
+insert overwrite table stu_buck
+select * from student distribute by(Sno) sort by(Sno asc);
 </code></pre>
 <!-- content end -->
 </div>
