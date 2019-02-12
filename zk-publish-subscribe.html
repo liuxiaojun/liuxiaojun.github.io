@@ -1,0 +1,183 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+数据发布/订阅（Publish/Subscribe）系统，即所谓的配置中心，发布者将数据发布到ZooKeeper的一个或一系列节点上，供订阅者进行数据订阅，进而达到动态获取数据的目的，实现配置信息的
+集中式管理和动态更新。
+
+发布/订阅系统一般有两种设计模式，分别是推（Push）模式和拉（Pull）模式。
+在推模式中，服务端主动将数据更新发送给所有订阅的客户端；而拉模式则是由客户端主动发起请求来获取最新数据，通常客户端都采用定时轮询拉取的方式。
+ZooKeeper采用的是推拉相结合的方式： 客户端向服务端注册自己需要关注的节点，一旦该节点的数据发生变更，那么服务端就会向相应的客户端发送Watcher事件通知，
+客户端接收到这个消息的通知以后，需要主动到服务端获取最新的数据。
+
+如果将配置信息存放到ZooKeeper上进行集中管理，那么通常情况下，应用在启动的时候都会主动到ZooKeeper服务端上进行一次配置信息的获取，同时，
+在指定节点上注册一个Watcher监听，这样一来，但凡配置信息发生变更，服务端都会实时通知到所有订阅的客户端，从而达到实时获取最新配置信息的目的。
+
+在我们平常的应用系统开发中，经常会遇到这样的需求： 系统中需要使用一些通用的配置信息，例如机器列表信息，运行时的开关配置，数据库配置信息等。这些全局配置信息通常具备以下3个特征。
+数据量通常比较小。
+数据内容运行时会发生动态变化。
+集群中各机器共享，配置一致。
+
+对于配置信息，通常是放在本地配置文件中或者内存变量中。
+本地文件： 应用在启动的时候读取本地磁盘的一个文件来初始化，并且在运行过程中定时进行文件读取，以此来检测文件内容的变更。当配置信息需要更新时，只需要将配置文件进行更新操作，应用程序定时读取配置文件的时候就能读到最新的数据了。
+内存变量： 以Java为例，通常可以采用JMX方式来实现对系统运行时内存变量的更新。
+
+
+如何用ZooKeeper进行配置管理：
+1. 将配置信息存储在zk里面。 选取存放的节点位置 例如， /configserver/app1/database_config
+数据库的配置信息如下：
+#DBCP
+dbcp.driverClassName=com.mysql.jdbc.Driver
+dbcp.dbJDBCurl=jdbc.mysql://127.0.0.1:3306/taokeeper
+dbcp.characterEncoding=GBK
+dbcp.username=xiaoming
+dbcp.password=123456
+dbcp.maxActive=30
+dbcp.maxIdle=10
+dbcp.maxWait=1000
+
+##配置获取
+集群中每台机器在启动初始化阶段，首先会从上面提到的ZooKeeper配置节点上读取数据库信息，同时，客户端还需要再该配置节点上注册一个数据变更的Watcher监听，一旦节点发生数据变更，所有订阅的客户端都能够获取到数据变更通知。
+
+##配置变更
+在系统运行过程中，可能会出现需要进行数据库切换的情况，这个时候需要进行配置变更。借助ZooKeeper，我们只需要对ZooKeeper上配置节点的内容进行更新，ZooKeeper就能够将数据变更的通知发送到各个客户端，每个客户端在接收到这个变更通知后，就可以重新进行最新数据的获取。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>数据发布/订阅（Publish/Subscribe）系统，即所谓的配置中心，发布者将数据发布到ZooKeeper的一个或一系列节点上，供订阅者进行数据订阅，进而达到动态获取数据的目的，实现配置信息的
+集中式管理和动态更新。</p>
+
+<p>发布/订阅系统一般有两种设计模式，分别是推（Push）模式和拉（Pull）模式。
+在推模式中，服务端主动将数据更新发送给所有订阅的客户端；而拉模式则是由客户端主动发起请求来获取最新数据，通常客户端都采用定时轮询拉取的方式。
+ZooKeeper采用的是推拉相结合的方式： 客户端向服务端注册自己需要关注的节点，一旦该节点的数据发生变更，那么服务端就会向相应的客户端发送Watcher事件通知，
+客户端接收到这个消息的通知以后，需要主动到服务端获取最新的数据。</p>
+
+<p>如果将配置信息存放到ZooKeeper上进行集中管理，那么通常情况下，应用在启动的时候都会主动到ZooKeeper服务端上进行一次配置信息的获取，同时，
+在指定节点上注册一个Watcher监听，这样一来，但凡配置信息发生变更，服务端都会实时通知到所有订阅的客户端，从而达到实时获取最新配置信息的目的。</p>
+
+<p>在我们平常的应用系统开发中，经常会遇到这样的需求： 系统中需要使用一些通用的配置信息，例如机器列表信息，运行时的开关配置，数据库配置信息等。这些全局配置信息通常具备以下3个特征。
+数据量通常比较小。
+数据内容运行时会发生动态变化。
+集群中各机器共享，配置一致。</p>
+
+<p>对于配置信息，通常是放在本地配置文件中或者内存变量中。
+本地文件： 应用在启动的时候读取本地磁盘的一个文件来初始化，并且在运行过程中定时进行文件读取，以此来检测文件内容的变更。当配置信息需要更新时，只需要将配置文件进行更新操作，应用程序定时读取配置文件的时候就能读到最新的数据了。
+内存变量： 以Java为例，通常可以采用JMX方式来实现对系统运行时内存变量的更新。</p>
+
+<p>如何用ZooKeeper进行配置管理：
+1. 将配置信息存储在zk里面。 选取存放的节点位置 例如， /configserver/app1/database_config
+数据库的配置信息如下：</p>
+
+<h1 id="dbcp">DBCP</h1>
+
+<p>dbcp.driverClassName=com.mysql.jdbc.Driver
+dbcp.dbJDBCurl=jdbc.mysql://127.0.0.1:3306/taokeeper
+dbcp.characterEncoding=GBK
+dbcp.username=xiaoming
+dbcp.password=123456
+dbcp.maxActive=30
+dbcp.maxIdle=10
+dbcp.maxWait=1000</p>
+
+<h2 id="">配置获取</h2>
+
+<p>集群中每台机器在启动初始化阶段，首先会从上面提到的ZooKeeper配置节点上读取数据库信息，同时，客户端还需要再该配置节点上注册一个数据变更的Watcher监听，一旦节点发生数据变更，所有订阅的客户端都能够获取到数据变更通知。</p>
+
+<h2 id="">配置变更</h2>
+
+<p>在系统运行过程中，可能会出现需要进行数据库切换的情况，这个时候需要进行配置变更。借助ZooKeeper，我们只需要对ZooKeeper上配置节点的内容进行更新，ZooKeeper就能够将数据变更的通知发送到各个客户端，每个客户端在接收到这个变更通知后，就可以重新进行最新数据的获取。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "zk-publish-subscribe.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
