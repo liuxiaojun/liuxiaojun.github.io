@@ -1,0 +1,157 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+随着分布式系统规模的日益扩大，集群中的机器规模也随之变大，因此，如何更好的进行集群管理也是显得越来越重要了。
+集群管理包括集群监控与集群控制两大块，前者侧重对集群运行时状态的收集，后者则是对集群进行操作与控制。在日常开发和运维过程中，我们经常有类似于如下的需求。
+
++ 希望知道当前集群中究竟有多少机器在工作。
++ 对集群中每台机器的运行时状态进行数据收集。
++ 对集群中每台机器进行上下线操作。
+
+在传统的基于Agent的分布式集群管理体系中，都是通过在集群中的每台机器上部署一个Agent，由这个Agent负责主动向指定的一个监控中心系统汇报自己所在机器的状态。在集群规模适中的场景下，这确实是一种在生产实战中广泛使用的解决方案，能够快递有效地实现分布式环境集群监控，但是一旦系统的业务场景增多，规模变大以后，弊端也就显现出来了。
+
+### 大规模升级困难
+以客户端形式存在的Agent，在大规模使用后，一旦遇上需要大规模升级的情况，就非常困难，在升级成本和升级进度的控制上面临巨大调整
+
+### 统一的Agent无法满足多样的需求
+对于机器的CPU使用率，负载，内存使用率，网络吞吐以及磁盘容量等机器基本的物理状态，使用统一的Agent来进行监控或者都可以满足。但是如果需要深入应用内部，对一些业务状态进行监控，例如，在一个分布式消息中间件中，希望监控到每个消费者对消息的消费状态；或者在一个分布式任务调度系统中，需要对每个机器上任务的执行情况进行监控。很显然，对于这些业务耦合紧密的不适合统一的Agent来提供。
+
+### 编程语言多样性
+传统的Agent需要对各种语言提供客户端。。
+
+ZooKeeper具有以下两大特性。
+
++ 客户端如果对ZooKeeper的一个数据节点注册Watcher监听，那么该节点的内容或是其子节点列表发生变更时，ZooKeeper服务器就会向订阅的客户端发送变更通知。
++ 对于ZooKeeper上创建临时节点，一旦客户端与服务器之间的绘画失效，那么该临时节点也就被自动清除。
+
+利用ZooKeeper的两大特性，就可以实现另一种集群机器存活性监控的系统。例如 监控系统在 /clusterServers节点上注册一个Watcher监听，那么但凡进行动态添加机器操作，就会在/clusterServers创建一个临时节点： /clusterServers/[hostName]。 这样一来，监控系统就能够实时检测到机器的变动情况。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>随着分布式系统规模的日益扩大，集群中的机器规模也随之变大，因此，如何更好的进行集群管理也是显得越来越重要了。
+集群管理包括集群监控与集群控制两大块，前者侧重对集群运行时状态的收集，后者则是对集群进行操作与控制。在日常开发和运维过程中，我们经常有类似于如下的需求。</p>
+
+<ul>
+<li>希望知道当前集群中究竟有多少机器在工作。</li>
+<li>对集群中每台机器的运行时状态进行数据收集。</li>
+<li>对集群中每台机器进行上下线操作。</li>
+</ul>
+
+<p>在传统的基于Agent的分布式集群管理体系中，都是通过在集群中的每台机器上部署一个Agent，由这个Agent负责主动向指定的一个监控中心系统汇报自己所在机器的状态。在集群规模适中的场景下，这确实是一种在生产实战中广泛使用的解决方案，能够快递有效地实现分布式环境集群监控，但是一旦系统的业务场景增多，规模变大以后，弊端也就显现出来了。</p>
+
+<h3 id="">大规模升级困难</h3>
+
+<p>以客户端形式存在的Agent，在大规模使用后，一旦遇上需要大规模升级的情况，就非常困难，在升级成本和升级进度的控制上面临巨大调整</p>
+
+<h3 id="agent">统一的Agent无法满足多样的需求</h3>
+
+<p>对于机器的CPU使用率，负载，内存使用率，网络吞吐以及磁盘容量等机器基本的物理状态，使用统一的Agent来进行监控或者都可以满足。但是如果需要深入应用内部，对一些业务状态进行监控，例如，在一个分布式消息中间件中，希望监控到每个消费者对消息的消费状态；或者在一个分布式任务调度系统中，需要对每个机器上任务的执行情况进行监控。很显然，对于这些业务耦合紧密的不适合统一的Agent来提供。</p>
+
+<h3 id="">编程语言多样性</h3>
+
+<p>传统的Agent需要对各种语言提供客户端。。</p>
+
+<p>ZooKeeper具有以下两大特性。</p>
+
+<ul>
+<li>客户端如果对ZooKeeper的一个数据节点注册Watcher监听，那么该节点的内容或是其子节点列表发生变更时，ZooKeeper服务器就会向订阅的客户端发送变更通知。</li>
+<li>对于ZooKeeper上创建临时节点，一旦客户端与服务器之间的绘画失效，那么该临时节点也就被自动清除。</li>
+</ul>
+
+<p>利用ZooKeeper的两大特性，就可以实现另一种集群机器存活性监控的系统。例如 监控系统在 /clusterServers节点上注册一个Watcher监听，那么但凡进行动态添加机器操作，就会在/clusterServers创建一个临时节点： /clusterServers/[hostName]。 这样一来，监控系统就能够实时检测到机器的变动情况。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "zk-cluster-management.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
