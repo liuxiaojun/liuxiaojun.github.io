@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+##YARN架构体系
+YARN主要由ResourceManager（RM），NodeManager（NM），ApplicationMaster（AM）和Container四部分组成。其中最核心的是ResourceManager，它作为全局的资源管理器，
+负责集群中所有资源的统一管理和分配,同时接收来自各个节点（NodeManager）的资源汇报消息，并吧这些信息按照一定的策略分配给各个应用程序（ApplicationManager），其内部
+维护了各个应用程序的ApplicationMaster信息、NodeManager信息以及资源使用信息等。因此，ResourceManager的工作状态直接决定了整个YARN框架是否可以正常运转。
+
+为了解决ResourceManager的这个单点问题，YARN设计了一套Active/Standby模式的ResourceManager HA架构。
+在运行期间，会有多个ResourceManager并存，并且一个ResourceManager处于Active状态，另外的一些则处于Standby状态，当Active节点无法正常工作，其余Standby状态的几点则会通过竞争
+选举产生新的Active节点。
+
+## 准备切换
+下面看看YARN如何进行多个ResourceManager之间的主备切换。
+ResourceManager使用基于ZooKeeper实现的ActiveStandbyElector组件来确定ResourceManager的状态：Active或Standby。具体做法如下：
+### 创建锁节点
+在ZooKeeper上会有一个类似于/yarn-leader-election/pseudo-yarn-rm-cluster的锁节点，所有的ResourceManager在启动的时候，都会去竞争写一个Lock子节点：/yarn-leader-election/pseudo-yarn-rm-cluster/ActiveStandbyElectorLock,同时需要注意的是，该子节点的类型是临时节点。ZooKeeper能够保证只有一个ResourceManager创建成功。创建成功的ResourceManager就切换为Active状态，没有成功的那些ResourceManager则切换为Standby状态。
+### 注册Watcher监听
+所有Standby状态的ResourceManager都会向/yarn-leader-election/pseudo-yarn-rm-cluster/ActiveStandbyElectorLock节点注册一个节点变更的Watcher监听，利用临时节点的特性，能够快速感知到Active状态的ResourceManager的运行情况。
+### 准备切换
+当Active状态的ResourceManager出现诸如重启或挂掉的情况，其在ZooKeeper上创建的Lock节点随之被删除，。此时，其余各个Standby状态的ResourceManager都会受到ZooKeeper服务端的Watcher事件通知，然后重复步骤1的操作。
+
+## Fencing(隔离)
+在分布式环境中，机器经常出现假死的情况（常见的是GC占用事件过长或CPU的负载过高）而导致无法正常对外进行及时响应。我们假设一台处于Active状态的ResourceManager出现假死，其他的ResourceManager选举出来新的Active状态的ResourceManager，假死的ResourceManager又恢复正常，还认为自己是Active状态。这就是分布式系统的脑裂。
+
+YARN中引入了Fencing机制，借助ZooKeeper数据接地点的ACL权限控制来实现不同RM之间的隔离。这个地方改进的一点是，创建的根节点必须携带ZooKeeper的ACL信息，目的是为了独占该节点，
+以防止其他RM对该节点进行更新。借助这个机制假死之后的RM，会试图去更新ZooKeeper的相关信息，但发现没有权限去更新节点数据，就吧自己切换为Standby状态。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="yarn">YARN架构体系</h2>
+
+<p>YARN主要由ResourceManager（RM），NodeManager（NM），ApplicationMaster（AM）和Container四部分组成。其中最核心的是ResourceManager，它作为全局的资源管理器，
+负责集群中所有资源的统一管理和分配,同时接收来自各个节点（NodeManager）的资源汇报消息，并吧这些信息按照一定的策略分配给各个应用程序（ApplicationManager），其内部
+维护了各个应用程序的ApplicationMaster信息、NodeManager信息以及资源使用信息等。因此，ResourceManager的工作状态直接决定了整个YARN框架是否可以正常运转。</p>
+
+<p>为了解决ResourceManager的这个单点问题，YARN设计了一套Active/Standby模式的ResourceManager HA架构。
+在运行期间，会有多个ResourceManager并存，并且一个ResourceManager处于Active状态，另外的一些则处于Standby状态，当Active节点无法正常工作，其余Standby状态的几点则会通过竞争
+选举产生新的Active节点。</p>
+
+<h2 id="">准备切换</h2>
+
+<p>下面看看YARN如何进行多个ResourceManager之间的主备切换。
+ResourceManager使用基于ZooKeeper实现的ActiveStandbyElector组件来确定ResourceManager的状态：Active或Standby。具体做法如下：</p>
+
+<h3 id="">创建锁节点</h3>
+
+<p>在ZooKeeper上会有一个类似于/yarn-leader-election/pseudo-yarn-rm-cluster的锁节点，所有的ResourceManager在启动的时候，都会去竞争写一个Lock子节点：/yarn-leader-election/pseudo-yarn-rm-cluster/ActiveStandbyElectorLock,同时需要注意的是，该子节点的类型是临时节点。ZooKeeper能够保证只有一个ResourceManager创建成功。创建成功的ResourceManager就切换为Active状态，没有成功的那些ResourceManager则切换为Standby状态。</p>
+
+<h3 id="watcher">注册Watcher监听</h3>
+
+<p>所有Standby状态的ResourceManager都会向/yarn-leader-election/pseudo-yarn-rm-cluster/ActiveStandbyElectorLock节点注册一个节点变更的Watcher监听，利用临时节点的特性，能够快速感知到Active状态的ResourceManager的运行情况。</p>
+
+<h3 id="">准备切换</h3>
+
+<p>当Active状态的ResourceManager出现诸如重启或挂掉的情况，其在ZooKeeper上创建的Lock节点随之被删除，。此时，其余各个Standby状态的ResourceManager都会受到ZooKeeper服务端的Watcher事件通知，然后重复步骤1的操作。</p>
+
+<h2 id="fencing">Fencing(隔离)</h2>
+
+<p>在分布式环境中，机器经常出现假死的情况（常见的是GC占用事件过长或CPU的负载过高）而导致无法正常对外进行及时响应。我们假设一台处于Active状态的ResourceManager出现假死，其他的ResourceManager选举出来新的Active状态的ResourceManager，假死的ResourceManager又恢复正常，还认为自己是Active状态。这就是分布式系统的脑裂。</p>
+
+<p>YARN中引入了Fencing机制，借助ZooKeeper数据接地点的ACL权限控制来实现不同RM之间的隔离。这个地方改进的一点是，创建的根节点必须携带ZooKeeper的ACL信息，目的是为了独占该节点，
+以防止其他RM对该节点进行更新。借助这个机制假死之后的RM，会试图去更新ZooKeeper的相关信息，但发现没有权限去更新节点数据，就吧自己切换为Standby状态。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "rm-ha.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
