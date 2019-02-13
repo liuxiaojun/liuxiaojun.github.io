@@ -1,0 +1,132 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+Name Server也是分布式系统中比较常见的一类情景。是分布式系统中最基本的公共服务之一。 在分布式系统中被命名的尸体通常可以是集群中的机器、提供的服务地址或远程对象等--这些都可以成为Name，其中较为常见的是一些分布式服务框架（RPC，RMI）中的服务地址列表，通过使用命名服务，
+客户端应用能够根据指定名字来获取资源的实体，服务地址和提供者的信息等。
+
+在分布式环境中，上层应用仅仅需要一个全局唯一的名字，类似数据库中的唯一主键。下面来看下zk是如何实现一套分布式全局唯一ID的分配机制。
+所谓ID，就是一个能够唯一标示某个对象的标识符。在我们熟悉的关系型数据库中，各个表都需要一个主键来唯一标识每条数据库记录，这个主键就是这样的唯一ID。在过去单库单表型系统中，通常使用数据库字段自带的 auto_increment属性来自动为每条数据库记录生成一个唯一的ID，数据库会保证生成的这个ID全局唯一。随着数据规模逐渐扩大，分库分表的使用，已经不能依靠	auto_increment属性。
+
+利用zk如何实现这个功能那？
+通过调用ZooKeeper节点创建的API接口可以创建一个顺序节点，并且在API的返回值中会返回这个节点的完整名字，利用这个特性，就可以了。
+* 所有客户端都会根据自己的任务类型，在指定类型的任务下面通过调用create() 接口来创建一个顺序节点，例如创建 "job-"节点。
+* 节点创建完毕后，create()接口会返回一个完整的节点名，例如 "job-0000000001"
+* 客户端拿到这个返回值后，拼接上type类型，例如"type2-job-0000000001",这就可以作为一个全局唯一的ID了。
+
+在ZooKeeper中，每一个数据节点都能够维护一份子节点的顺序序列，当客户端对其创建一个顺序子节点的时候ZooKeeper会自动以后缀的形式在其子节点上增加一个序号，这个场景就利用了zk这个特性。
+
+需要注意的是这个数字的上限是整形的最大值。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>Name Server也是分布式系统中比较常见的一类情景。是分布式系统中最基本的公共服务之一。 在分布式系统中被命名的尸体通常可以是集群中的机器、提供的服务地址或远程对象等--这些都可以成为Name，其中较为常见的是一些分布式服务框架（RPC，RMI）中的服务地址列表，通过使用命名服务，
+客户端应用能够根据指定名字来获取资源的实体，服务地址和提供者的信息等。</p>
+
+<p>在分布式环境中，上层应用仅仅需要一个全局唯一的名字，类似数据库中的唯一主键。下面来看下zk是如何实现一套分布式全局唯一ID的分配机制。
+所谓ID，就是一个能够唯一标示某个对象的标识符。在我们熟悉的关系型数据库中，各个表都需要一个主键来唯一标识每条数据库记录，这个主键就是这样的唯一ID。在过去单库单表型系统中，通常使用数据库字段自带的 auto<em>increment属性来自动为每条数据库记录生成一个唯一的ID，数据库会保证生成的这个ID全局唯一。随着数据规模逐渐扩大，分库分表的使用，已经不能依靠    auto</em>increment属性。</p>
+
+<p>利用zk如何实现这个功能那？
+通过调用ZooKeeper节点创建的API接口可以创建一个顺序节点，并且在API的返回值中会返回这个节点的完整名字，利用这个特性，就可以了。
+* 所有客户端都会根据自己的任务类型，在指定类型的任务下面通过调用create() 接口来创建一个顺序节点，例如创建 "job-"节点。
+* 节点创建完毕后，create()接口会返回一个完整的节点名，例如 "job-0000000001"
+* 客户端拿到这个返回值后，拼接上type类型，例如"type2-job-0000000001",这就可以作为一个全局唯一的ID了。</p>
+
+<p>在ZooKeeper中，每一个数据节点都能够维护一份子节点的顺序序列，当客户端对其创建一个顺序子节点的时候ZooKeeper会自动以后缀的形式在其子节点上增加一个序号，这个场景就利用了zk这个特性。</p>
+
+<p>需要注意的是这个数字的上限是整形的最大值。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "zk-name.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
