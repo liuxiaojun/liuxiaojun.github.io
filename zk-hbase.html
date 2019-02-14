@@ -1,0 +1,169 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+## 系统冗余
+当Hbase启动的时候，每个RegionServer服务器都会到ZooKeeper的/hbase/rs节点下创建一个状态节点，例如/hbase/[Hostname],同时，HMaster会对这个节点进行监听。当某个RegionServer挂掉
+的时候，ZooKeeper会因为在一段时间内无法接收其心跳信息（即session失效），而删除掉该RegionServer对应的rs状态节点。与此同时，HMaster则会接收到ZooKeeper的NodeDelete通知，从而
+感知到某个节点断开，并开始容错工作--在Hbase的实现中，HMaster会将该regionServer所处理的数据分片（Region）重新路由到其他节点上，并记录到Meta信息中供客户端查询。
+
+HMaster有挂掉的可能，而且负担集群越大，负担越大，因此将数据持久化，ZooKeeper就成了理想的选择。
+
+## RootRegion管理
+对于HBase集群来说，数据存储的位置信息是记录在元数据分片，也就是RootRegion上的。每次客户端发起新的请求，需要知道数据的位置就会查RootRegion，而RootRegion自身的位置则是记录在ZooKeeper上的（默认的情况下，是记录在ZooKeeper的/lib/root-region-server节点中）。 当RootRegion发生变化，比如Region的手动移动、Balance或者是RootRegion所在服务器发生故障等时，就
+能够通过ZooKeeper来感知到这一变化并做出一系列响应的容灾措施，从而保障客户端能够拿到正确的RootRegion信息。
+
+## Region状态管理
+Region是HBase中数据的物理切片，每个Region中记录了全局数据的一小部分，并且不同的Region之间的数据是相互不重复的。但对于一个分布式系统来说，Region会经常发生变更的，这些变更的原因
+来自于系统故障、负载均衡、配置修改、Region分裂与合并等。一旦Region发生移动，它必然会经历Offline和重新Online过程。
+
+在Offline期间数据是不能被访问的，并且Region的这个状态必须让全局知晓，否则可能会出现某些事务性的异常。而对于HBase集群来说，Region的数量可能多达10万级别，甚至更多，因此这样规模的Region状态管理也只能依靠ZooKeeper这样的系统才能达到。
+
+##分布式SplitLog任务管理
+当某台RegionServer服务器挂掉时，由于总有一部分新写入的数据还没有持久化到HFile中，因此在迁移该RegionServer的服务时，一个重要的工作就是从HLog中恢复这部分还在内存中的数据，而这部分
+工作最关键的一步就是SplitLog，即HMaster需要遍历该RegionServer服务器的HLog，并按Region切分成小块移动到新的地址下，并进行数据的Replay。
+
+由于单个RegionServer的日志量相对庞大（可能有数千个Region，上GB的日志），而用户又往往希望系统能够快速完成日志的恢复工作。因此一个可行的方案是将这个处理HLog的任务分给多台RegionServer服务器来共同处理，而这就又需要一个持久化组件来辅助HMaster完成任务的分配。当前的做法是，HMaster会在ZooKeeper上创建一个splitlog的节点（默认情况下，是/hbase/splitlog节点），
+将哪个RegionServer处理哪个Region这样的信息放在节点信息上，然后由各个RegionServer服务器自行到该节点上领任务并更新状态。
+
+## Repilicaiton管理
+Repilicaiton是实现HBase中主备集群间的实时同步的重要模块。有了Repilicaiton， HBase就能够实现实时的主备同步，从而拥有了容灾和分流等关系型数据库才拥有的功能。HBase作为分布式系统，
+它的Repilicaiton是多对多的，并且每个节点都有可能挂掉。
+
+HBase借助ZooKeeper来完成Repilicaiton功能。做法是在ZooKeeper上记录一个replication节点（默认情况下，是/hbase/replication节点），然后把不同的RegionServer服务器对应的HLog
+文件名称记录到响应的节点上，HMaster集群会将新增的数据推送给Slave集群，并同时将推送信息记录到ZooKeeper上，然后再重复以上过程。当服务器挂掉时，由于ZooKeeper已经保存了断点信息，因此
+只要有HMaster能够根据这些断点信息来协助来推送HLog数据的主节点服务器，就可以继续复制了。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="">系统冗余</h2>
+
+<p>当Hbase启动的时候，每个RegionServer服务器都会到ZooKeeper的/hbase/rs节点下创建一个状态节点，例如/hbase/[Hostname],同时，HMaster会对这个节点进行监听。当某个RegionServer挂掉
+的时候，ZooKeeper会因为在一段时间内无法接收其心跳信息（即session失效），而删除掉该RegionServer对应的rs状态节点。与此同时，HMaster则会接收到ZooKeeper的NodeDelete通知，从而
+感知到某个节点断开，并开始容错工作--在Hbase的实现中，HMaster会将该regionServer所处理的数据分片（Region）重新路由到其他节点上，并记录到Meta信息中供客户端查询。</p>
+
+<p>HMaster有挂掉的可能，而且负担集群越大，负担越大，因此将数据持久化，ZooKeeper就成了理想的选择。</p>
+
+<h2 id="rootregion">RootRegion管理</h2>
+
+<p>对于HBase集群来说，数据存储的位置信息是记录在元数据分片，也就是RootRegion上的。每次客户端发起新的请求，需要知道数据的位置就会查RootRegion，而RootRegion自身的位置则是记录在ZooKeeper上的（默认的情况下，是记录在ZooKeeper的/lib/root-region-server节点中）。 当RootRegion发生变化，比如Region的手动移动、Balance或者是RootRegion所在服务器发生故障等时，就
+能够通过ZooKeeper来感知到这一变化并做出一系列响应的容灾措施，从而保障客户端能够拿到正确的RootRegion信息。</p>
+
+<h2 id="region">Region状态管理</h2>
+
+<p>Region是HBase中数据的物理切片，每个Region中记录了全局数据的一小部分，并且不同的Region之间的数据是相互不重复的。但对于一个分布式系统来说，Region会经常发生变更的，这些变更的原因
+来自于系统故障、负载均衡、配置修改、Region分裂与合并等。一旦Region发生移动，它必然会经历Offline和重新Online过程。</p>
+
+<p>在Offline期间数据是不能被访问的，并且Region的这个状态必须让全局知晓，否则可能会出现某些事务性的异常。而对于HBase集群来说，Region的数量可能多达10万级别，甚至更多，因此这样规模的Region状态管理也只能依靠ZooKeeper这样的系统才能达到。</p>
+
+<h2 id="splitlog">分布式SplitLog任务管理</h2>
+
+<p>当某台RegionServer服务器挂掉时，由于总有一部分新写入的数据还没有持久化到HFile中，因此在迁移该RegionServer的服务时，一个重要的工作就是从HLog中恢复这部分还在内存中的数据，而这部分
+工作最关键的一步就是SplitLog，即HMaster需要遍历该RegionServer服务器的HLog，并按Region切分成小块移动到新的地址下，并进行数据的Replay。</p>
+
+<p>由于单个RegionServer的日志量相对庞大（可能有数千个Region，上GB的日志），而用户又往往希望系统能够快速完成日志的恢复工作。因此一个可行的方案是将这个处理HLog的任务分给多台RegionServer服务器来共同处理，而这就又需要一个持久化组件来辅助HMaster完成任务的分配。当前的做法是，HMaster会在ZooKeeper上创建一个splitlog的节点（默认情况下，是/hbase/splitlog节点），
+将哪个RegionServer处理哪个Region这样的信息放在节点信息上，然后由各个RegionServer服务器自行到该节点上领任务并更新状态。</p>
+
+<h2 id="repilicaiton">Repilicaiton管理</h2>
+
+<p>Repilicaiton是实现HBase中主备集群间的实时同步的重要模块。有了Repilicaiton， HBase就能够实现实时的主备同步，从而拥有了容灾和分流等关系型数据库才拥有的功能。HBase作为分布式系统，
+它的Repilicaiton是多对多的，并且每个节点都有可能挂掉。</p>
+
+<p>HBase借助ZooKeeper来完成Repilicaiton功能。做法是在ZooKeeper上记录一个replication节点（默认情况下，是/hbase/replication节点），然后把不同的RegionServer服务器对应的HLog
+文件名称记录到响应的节点上，HMaster集群会将新增的数据推送给Slave集群，并同时将推送信息记录到ZooKeeper上，然后再重复以上过程。当服务器挂掉时，由于ZooKeeper已经保存了断点信息，因此
+只要有HMaster能够根据这些断点信息来协助来推送HLog数据的主节点服务器，就可以继续复制了。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "zk-hbase.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
