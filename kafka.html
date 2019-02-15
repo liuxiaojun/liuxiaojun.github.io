@@ -1,0 +1,128 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+##分区和副本
+Kafka将一组消息归纳为一个主题，而每个主题又被分成一个或多个分区。每个分区由一系列有序、不可变的消息组成，是一个有序序列。
+每个分区在物理上对应为一个文件夹，分区的命名规则为 主题名称后接“-”连接符，之后再按分区编号，分区编号从0开始，编号最大值为
+分区的总数减1。每个分区又有一至多个副本，分区的副本分布在集群的不同代理上，以提高可用性。从存储角度上分析，分区的每个副本
+在逻辑上抽象为一个日志对象，即分区的副本与日志对象是一一对应的。每个主题对应的分区数可以在Kafka启动时所加载的配置文件中配置，
+也可以创建主题时指定。当然，客户端还可以在主题创建后修改主题的分区数。
+
+Kafka只能保证一个分区之内消息的有序性，并不能保证跨分区消息的有序性。每条消息被追加到相应的分区中，是迅速写磁盘，Kafka并不能
+立即删除已被消费的消息，Kafka提供了两种删除老数据的策略： 一是基于消息已存储的时间长度，二是基于分区的大小。
+
+##Leader副本和Follower副本
+由于副本的存在，需要保证一个分区的多个副本的数据一致性。Kafka会选择一个副本作为Leader副本，其他的副本即为Follower副本，只有Leader副本才能处理客户端读/写请求，Follower副本从Leader副本同步数据。
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="">分区和副本</h2>
+
+<p>Kafka将一组消息归纳为一个主题，而每个主题又被分成一个或多个分区。每个分区由一系列有序、不可变的消息组成，是一个有序序列。
+每个分区在物理上对应为一个文件夹，分区的命名规则为 主题名称后接“-”连接符，之后再按分区编号，分区编号从0开始，编号最大值为
+分区的总数减1。每个分区又有一至多个副本，分区的副本分布在集群的不同代理上，以提高可用性。从存储角度上分析，分区的每个副本
+在逻辑上抽象为一个日志对象，即分区的副本与日志对象是一一对应的。每个主题对应的分区数可以在Kafka启动时所加载的配置文件中配置，
+也可以创建主题时指定。当然，客户端还可以在主题创建后修改主题的分区数。</p>
+
+<p>Kafka只能保证一个分区之内消息的有序性，并不能保证跨分区消息的有序性。每条消息被追加到相应的分区中，是迅速写磁盘，Kafka并不能
+立即删除已被消费的消息，Kafka提供了两种删除老数据的策略： 一是基于消息已存储的时间长度，二是基于分区的大小。</p>
+
+<h2 id="leaderfollower">Leader副本和Follower副本</h2>
+
+<p>由于副本的存在，需要保证一个分区的多个副本的数据一致性。Kafka会选择一个副本作为Leader副本，其他的副本即为Follower副本，只有Leader副本才能处理客户端读/写请求，Follower副本从Leader副本同步数据。</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "kafka.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
