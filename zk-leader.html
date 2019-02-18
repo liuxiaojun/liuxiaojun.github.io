@@ -1,0 +1,201 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+## 服务器启动时期的Leader选举
+以3台服务器组成的服务器集群为例。在服务器集群初始化阶段，当有一台服务器（Server1机器，myid为1）启动的时候，是无法完成Leader选举的。当第二台机器 
+（Server2机器，myid为2）启动后，这两台机器已经能够相互通信，每台机器都试图找到一个Leader，于是便进入了Leader选举流程。
+
+### 每个Server会发出一个投票
+由于是初始情况，因此对于Server1和Server2来说，都会将自己作为Leader服务器进行投票，每个投票包含的最基本元素包括： 所推举的服务器的myid和ZXID,
+我们以（myid, ZXID）的形式来表示。因为是初始化阶段，无论是Server1还是Server2，都会投给自己，即Server1的投票为（1，0）， Server2的投票为
+（2， 0） ，然后各自将这个投票发给集群中的其他所有机器。
+
+### 接收来自各个服务器的投票
+每个服务器都会接收其他服务器的投票。接收后，先判断该投票的有效性，包括检查是否是本轮投票，是否来自LOOKING状态的服务器。
+
+### 处理投票
+在接收到其他服务器的投票后，服务器都需要将别人的投票和自己的投票进行PK，PK的规则如下。
++ 优先检查ZXID。ZXID比较大的服务器优先作为Leader。
++ 如果ZXID相同的话，那么久比较myid。myid比较大的服务器作为Leader服务器。
+
+对于Server1来说，它自己的投票是（1，0），而接到的投票是（2，0）。首先会比较ZXID，两者一致。接着比较myid，Server2的myid大于自己，于是更新自己的投票为
+（2，0） ，然后重新将投票发出去。对于Server2来说，不需要更新自己的投票信息，只是再一次发一个投票信息。
+
+### 统计投票
+每次投票后，服务器都会统计所有投票，判断是否已经有过半的服务器接收到相同的信息。
+
+### 改变服务器状态
+一旦确定的Leader，每个服务器会更新自己的状态。
+
+
+## 服务器运行期间的Leader选举
+一旦运转期间的Leader发生故障，开始进行Leader选举，过程和上面类似。
+
+### 状态变更
+当Leader挂了以后，其余非Observer服务器都会讲自己的状态变更为LOOKING，然后开始进行Leader选举过程。
+
+### 每个Server都会发出一个投票
+在这个过程中，需要生成投票信息（myid，ZXID）。因为是在运行期间，因此，每个服务器的ZXID可能不同，我们假设Server1的ZXID为123，而Server3的ZXID为122。
+在第一轮投票中，Server1和Server3都会投给自己。然后将这个结果发给集群中的所有机器。
+
+### 接受来自其它服务器的投票
+
+### 处理投票
+由于Server1的ZXID为123，Server3的ZXID为122，显然Server1为Leader
+
+### 统计投票
+
+### 改变服务器状态 
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<h2 id="leader">服务器启动时期的Leader选举</h2>
+
+<p>以3台服务器组成的服务器集群为例。在服务器集群初始化阶段，当有一台服务器（Server1机器，myid为1）启动的时候，是无法完成Leader选举的。当第二台机器 
+（Server2机器，myid为2）启动后，这两台机器已经能够相互通信，每台机器都试图找到一个Leader，于是便进入了Leader选举流程。</p>
+
+<h3 id="server">每个Server会发出一个投票</h3>
+
+<p>由于是初始情况，因此对于Server1和Server2来说，都会将自己作为Leader服务器进行投票，每个投票包含的最基本元素包括： 所推举的服务器的myid和ZXID,
+我们以（myid, ZXID）的形式来表示。因为是初始化阶段，无论是Server1还是Server2，都会投给自己，即Server1的投票为（1，0）， Server2的投票为
+（2， 0） ，然后各自将这个投票发给集群中的其他所有机器。</p>
+
+<h3 id="">接收来自各个服务器的投票</h3>
+
+<p>每个服务器都会接收其他服务器的投票。接收后，先判断该投票的有效性，包括检查是否是本轮投票，是否来自LOOKING状态的服务器。</p>
+
+<h3 id="">处理投票</h3>
+
+<p>在接收到其他服务器的投票后，服务器都需要将别人的投票和自己的投票进行PK，PK的规则如下。
++ 优先检查ZXID。ZXID比较大的服务器优先作为Leader。
++ 如果ZXID相同的话，那么久比较myid。myid比较大的服务器作为Leader服务器。</p>
+
+<p>对于Server1来说，它自己的投票是（1，0），而接到的投票是（2，0）。首先会比较ZXID，两者一致。接着比较myid，Server2的myid大于自己，于是更新自己的投票为
+（2，0） ，然后重新将投票发出去。对于Server2来说，不需要更新自己的投票信息，只是再一次发一个投票信息。</p>
+
+<h3 id="">统计投票</h3>
+
+<p>每次投票后，服务器都会统计所有投票，判断是否已经有过半的服务器接收到相同的信息。</p>
+
+<h3 id="">改变服务器状态</h3>
+
+<p>一旦确定的Leader，每个服务器会更新自己的状态。</p>
+
+<h2 id="leader">服务器运行期间的Leader选举</h2>
+
+<p>一旦运转期间的Leader发生故障，开始进行Leader选举，过程和上面类似。</p>
+
+<h3 id="">状态变更</h3>
+
+<p>当Leader挂了以后，其余非Observer服务器都会讲自己的状态变更为LOOKING，然后开始进行Leader选举过程。</p>
+
+<h3 id="server">每个Server都会发出一个投票</h3>
+
+<p>在这个过程中，需要生成投票信息（myid，ZXID）。因为是在运行期间，因此，每个服务器的ZXID可能不同，我们假设Server1的ZXID为123，而Server3的ZXID为122。
+在第一轮投票中，Server1和Server3都会投给自己。然后将这个结果发给集群中的所有机器。</p>
+
+<h3 id="">接受来自其它服务器的投票</h3>
+
+<h3 id="">处理投票</h3>
+
+<p>由于Server1的ZXID为123，Server3的ZXID为122，显然Server1为Leader</p>
+
+<h3 id="">统计投票</h3>
+
+<h3 id="">改变服务器状态</h3>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "zk-leader.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
