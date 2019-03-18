@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+ofo
+
+ofo本身无法实现盈利。
+从管理学将，管理的的首要任务是让企业有经济绩效，而小黄车到今天都没有一个很好的盈利模式是无法盈利，光靠输血，光靠融资是无法旧村的。
+第二个是商业模式上出现问题，共享模式，共享的本质是边际成本为零，而实际上有制造成本，运输成本，本质上是一个分时租赁，不是闲置资源进行整合，
+顺风车是典型的共享经济，
+
+裁员
+红光
+行业，十年大跃进后，人多比多，通过裁员使自己的绩效得到提高。
+内部管理： 从企业来看，企业只有通过裁员优化成本，这样的
+宏观经济下行，
+从
+管理的第二项：
+让员工更有成就感
+
+
+中国的劳动力和海外资本和技术，吧生产品输出到美国，
+贸易战， 整个全球化的过程中产生的经济问题和社会问题累积（劳动力从美国转移到中国），贫富差距越来越大，
+缩小逆差，
+受冲击最大的是汽车，
+零售和金融冲击很大。（券商不收手续费，保险霸王条款， 国内的商品太贵了），
+机会： 商品追溯行业，机场附近的闲置仓，短期是人民币升值空间（大量外企进行中国，增强对人民币的需求），
+
+
+第三个： 处理对社会的影响和承担社会责任
+每个企业都是社会的成员，
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>ofo</p>
+
+<p>ofo本身无法实现盈利。
+从管理学将，管理的的首要任务是让企业有经济绩效，而小黄车到今天都没有一个很好的盈利模式是无法盈利，光靠输血，光靠融资是无法旧村的。
+第二个是商业模式上出现问题，共享模式，共享的本质是边际成本为零，而实际上有制造成本，运输成本，本质上是一个分时租赁，不是闲置资源进行整合，
+顺风车是典型的共享经济，</p>
+
+<p>裁员
+红光
+行业，十年大跃进后，人多比多，通过裁员使自己的绩效得到提高。
+内部管理： 从企业来看，企业只有通过裁员优化成本，这样的
+宏观经济下行，
+从
+管理的第二项：
+让员工更有成就感</p>
+
+<p>中国的劳动力和海外资本和技术，吧生产品输出到美国，
+贸易战， 整个全球化的过程中产生的经济问题和社会问题累积（劳动力从美国转移到中国），贫富差距越来越大，
+缩小逆差，
+受冲击最大的是汽车，
+零售和金融冲击很大。（券商不收手续费，保险霸王条款， 国内的商品太贵了），
+机会： 商品追溯行业，机场附近的闲置仓，短期是人民币升值空间（大量外企进行中国，增强对人民币的需求），</p>
+
+<p>第三个： 处理对社会的影响和承担社会责任
+每个企业都是社会的成员，</p>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "20190318.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
