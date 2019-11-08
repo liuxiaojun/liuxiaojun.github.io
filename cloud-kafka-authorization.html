@@ -1,0 +1,214 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="Keywords" content="blog"/>
+    <meta name="Description" content="blog"/>
+    <title>Simple</title>
+    <link rel="shortcut icon" href="/static/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+</head>
+<body>
+<div class="main">
+    <div class="header">
+    	<ul id="pages">
+            <li><a href="/">home</a></li>
+            <li><a href="/#/tags">tags</a></li>
+            <li><a href="/#/archive">archive</a></li>
+    	</ul>
+    </div>
+	<div class="wrap-header">
+	<h1>
+    <a href="/" id="title"></a>
+	</h1>
+	</div>
+<div id="md" style="display: none;">
+<!-- markdown -->
+云环境下的授权机制
+
+所谓授权，一般是指对与信息安全或计算机安全相关的资源授予访问权限，特别是存取控制。
+
+具体到权限模型，常见的有四种。
+ACL：Access-Control List，访问控制列表。
+RBAC：Role-Based Access Control，基于角色的权限控制。
+ABAC：Attribute-Based Access Control，基于属性的权限控制。
+PBAC：Policy-Based Access Control，基于策略的权限控制。
+
+在典型的互联网场景中，前两种模型应用得多，后面这两种则比较少用。
+
+Kafka 提供了一个可插拔的授权实现机制。该机制会将你配置的所有 ACL 项保存在 ZooKeeper 下的 /kafka-acl 节点中。你可以通过 Kafka 自带的 kafka-acls 脚本动态地对 ACL 项进行增删改查，并让它立即生效。
+
+如何开启 ACL？
+
+在 Broker 端的配置文件server.properties  中增加一行设置
+authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer
+
+
+超级用户（Super User）
+在开启了 ACL 授权之后，你还必须显式地为不同用户设置访问某项资源的权限，否则，在默认情况下，没有配置任何 ACL 的资源是不能被访问的。不过，这里也有一个例外：超级用户能够访问所有的资源，即使你没有为它们设置任何 ACL 项。
+
+如何在一个 Kafka 集群中设置超级用户呢？只需要在 Broker 端的配置文件 server.properties 中，设置 super.users 参数即可
+super.users=User:superuser1;User:superuser2
+
+kafka-acls 脚本
+我们要为用户 Alice 增加了集群级别的所有权限
+
+$ kafka-acls --authorizer-properties zookeeper.connect=localhost:2181 --add --allow-principal User:Alice --operation All --topic '*' --cluster
+在这个命令中，All 表示所有操作，topic 中的星号则表示所有主题，指定 --cluster 则说明我们要为 Alice 设置的是集群权限。
+
+
+
+$ bin/kafka-acls --authorizer-properties zookeeper.connect=localhost:2181 --add --allow-principal User:'*' --allow-host '*' --deny-principal User:BadUser --deny-host 10.205.96.119 --operation Read --topic test-topic
+
+User 后面的星号表示所有用户，allow-host 后面的星号则表示所有 IP 地址。这个命令的意思是，允许所有的用户使用任意的 IP 地址读取名为 test-topic 的主题数据，同时也禁止 BadUser 用户和 10.205.96.119 的 IP 地址访问 test-topic 下的消息。
+
+
+授权机制能否单独使用？
+只能为 IP 地址设置权限
+这个命令会禁止运行在 127.0.0.1IP 地址上的 Producer 应用向 test 主题发送数据
+
+$ bin/kafka-acls.sh --authorizer-properties zookeeper.connect=localhost:2181 --add --deny-principal User:* --deny-host 127.0.0.1 --operation Write --topic test
+$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+>hello
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- markdown end -->
+</div>
+<div class="entry" id="main">
+<!-- content -->
+<p>云环境下的授权机制</p>
+
+<p>所谓授权，一般是指对与信息安全或计算机安全相关的资源授予访问权限，特别是存取控制。</p>
+
+<p>具体到权限模型，常见的有四种。
+ACL：Access-Control List，访问控制列表。
+RBAC：Role-Based Access Control，基于角色的权限控制。
+ABAC：Attribute-Based Access Control，基于属性的权限控制。
+PBAC：Policy-Based Access Control，基于策略的权限控制。</p>
+
+<p>在典型的互联网场景中，前两种模型应用得多，后面这两种则比较少用。</p>
+
+<p>Kafka 提供了一个可插拔的授权实现机制。该机制会将你配置的所有 ACL 项保存在 ZooKeeper 下的 /kafka-acl 节点中。你可以通过 Kafka 自带的 kafka-acls 脚本动态地对 ACL 项进行增删改查，并让它立即生效。</p>
+
+<p>如何开启 ACL？</p>
+
+<p>在 Broker 端的配置文件server.properties  中增加一行设置
+authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer</p>
+
+<p>超级用户（Super User）
+在开启了 ACL 授权之后，你还必须显式地为不同用户设置访问某项资源的权限，否则，在默认情况下，没有配置任何 ACL 的资源是不能被访问的。不过，这里也有一个例外：超级用户能够访问所有的资源，即使你没有为它们设置任何 ACL 项。</p>
+
+<p>如何在一个 Kafka 集群中设置超级用户呢？只需要在 Broker 端的配置文件 server.properties 中，设置 super.users 参数即可
+super.users=User:superuser1;User:superuser2</p>
+
+<p>kafka-acls 脚本
+我们要为用户 Alice 增加了集群级别的所有权限</p>
+
+<p>$ kafka-acls --authorizer-properties zookeeper.connect=localhost:2181 --add --allow-principal User:Alice --operation All --topic '*' --cluster
+在这个命令中，All 表示所有操作，topic 中的星号则表示所有主题，指定 --cluster 则说明我们要为 Alice 设置的是集群权限。</p>
+
+<p>$ bin/kafka-acls --authorizer-properties zookeeper.connect=localhost:2181 --add --allow-principal User:'<em>' --allow-host '</em>' --deny-principal User:BadUser --deny-host 10.205.96.119 --operation Read --topic test-topic</p>
+
+<p>User 后面的星号表示所有用户，allow-host 后面的星号则表示所有 IP 地址。这个命令的意思是，允许所有的用户使用任意的 IP 地址读取名为 test-topic 的主题数据，同时也禁止 BadUser 用户和 10.205.96.119 的 IP 地址访问 test-topic 下的消息。</p>
+
+<p>授权机制能否单独使用？
+只能为 IP 地址设置权限
+这个命令会禁止运行在 127.0.0.1IP 地址上的 Producer 应用向 test 主题发送数据</p>
+
+<p><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-2-Frame" tabindex="0" data-mathml="<math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;><mi>b</mi><mi>i</mi><mi>n</mi><mrow class=&quot;MJX-TeXAtom-ORD&quot;><mo>/</mo></mrow><mi>k</mi><mi>a</mi><mi>f</mi><mi>k</mi><mi>a</mi><mo>&amp;#x2212;</mo><mi>a</mi><mi>c</mi><mi>l</mi><mi>s</mi><mo>.</mo><mi>s</mi><mi>h</mi><mo>&amp;#x2212;</mo><mo>&amp;#x2212;</mo><mi>a</mi><mi>u</mi><mi>t</mi><mi>h</mi><mi>o</mi><mi>r</mi><mi>i</mi><mi>z</mi><mi>e</mi><mi>r</mi><mo>&amp;#x2212;</mo><mi>p</mi><mi>r</mi><mi>o</mi><mi>p</mi><mi>e</mi><mi>r</mi><mi>t</mi><mi>i</mi><mi>e</mi><mi>s</mi><mi>z</mi><mi>o</mi><mi>o</mi><mi>k</mi><mi>e</mi><mi>e</mi><mi>p</mi><mi>e</mi><mi>r</mi><mo>.</mo><mi>c</mi><mi>o</mi><mi>n</mi><mi>n</mi><mi>e</mi><mi>c</mi><mi>t</mi><mo>=</mo><mi>l</mi><mi>o</mi><mi>c</mi><mi>a</mi><mi>l</mi><mi>h</mi><mi>o</mi><mi>s</mi><mi>t</mi><mo>:</mo><mn>2181</mn><mo>&amp;#x2212;</mo><mo>&amp;#x2212;</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo>&amp;#x2212;</mo><mo>&amp;#x2212;</mo><mi>d</mi><mi>e</mi><mi>n</mi><mi>y</mi><mo>&amp;#x2212;</mo><mi>p</mi><mi>r</mi><mi>i</mi><mi>n</mi><mi>c</mi><mi>i</mi><mi>p</mi><mi>a</mi><mi>l</mi><mi>U</mi><mi>s</mi><mi>e</mi><mi>r</mi><mo>:</mo><mo>&amp;#x2217;</mo><mo>&amp;#x2212;</mo><mo>&amp;#x2212;</mo><mi>d</mi><mi>e</mi><mi>n</mi><mi>y</mi><mo>&amp;#x2212;</mo><mi>h</mi><mi>o</mi><mi>s</mi><mi>t</mi><mn>127.0.0.1</mn><mo>&amp;#x2212;</mo><mo>&amp;#x2212;</mo><mi>o</mi><mi>p</mi><mi>e</mi><mi>r</mi><mi>a</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi><mi>W</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>e</mi><mo>&amp;#x2212;</mo><mo>&amp;#x2212;</mo><mi>t</mi><mi>o</mi><mi>p</mi><mi>i</mi><mi>c</mi><mi>t</mi><mi>e</mi><mi>s</mi><mi>t</mi></math>" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-140" style="width: 91.466em; display: inline-block;"><span style="display: inline-block; position: relative; width: 74.342em; height: 0px; font-size: 123%;"><span style="position: absolute; clip: rect(1.73em, 1074.34em, 2.899em, -999.997em); top: -2.538em; left: 0em;"><span class="mrow" id="MathJax-Span-141"><span class="mi" id="MathJax-Span-142" style="font-family: STIXGeneral-Italic;">b</span><span class="mi" id="MathJax-Span-143" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-144" style="font-family: STIXGeneral-Italic;">n</span><span class="texatom" id="MathJax-Span-145"><span class="mrow" id="MathJax-Span-146"><span class="mo" id="MathJax-Span-147" style="font-family: STIXGeneral-Regular;">/</span></span></span><span class="mi" id="MathJax-Span-148" style="font-family: STIXGeneral-Italic;">k<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-149" style="font-family: STIXGeneral-Italic;">a</span><span class="mi" id="MathJax-Span-150" style="font-family: STIXGeneral-Italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.155em;"></span></span><span class="mi" id="MathJax-Span-151" style="font-family: STIXGeneral-Italic;">k<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-152" style="font-family: STIXGeneral-Italic;">a</span><span class="mo" id="MathJax-Span-153" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-154" style="font-family: STIXGeneral-Italic; padding-left: 0.257em;">a</span><span class="mi" id="MathJax-Span-155" style="font-family: STIXGeneral-Italic;">c</span><span class="mi" id="MathJax-Span-156" style="font-family: STIXGeneral-Italic;">l<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-157" style="font-family: STIXGeneral-Italic;">s</span><span class="mo" id="MathJax-Span-158" style="font-family: STIXGeneral-Regular;">.</span><span class="mi" id="MathJax-Span-159" style="font-family: STIXGeneral-Italic; padding-left: 0.206em;">s</span><span class="mi" id="MathJax-Span-160" style="font-family: STIXGeneral-Italic;">h</span><span class="mo" id="MathJax-Span-161" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mo" id="MathJax-Span-162" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-163" style="font-family: STIXGeneral-Italic;">a</span><span class="mi" id="MathJax-Span-164" style="font-family: STIXGeneral-Italic;">u</span><span class="mi" id="MathJax-Span-165" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-166" style="font-family: STIXGeneral-Italic;">h</span><span class="mi" id="MathJax-Span-167" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-168" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-169" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-170" style="font-family: STIXGeneral-Italic;">z</span><span class="mi" id="MathJax-Span-171" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-172" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-173" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-174" style="font-family: STIXGeneral-Italic; padding-left: 0.257em;">p</span><span class="mi" id="MathJax-Span-175" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-176" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-177" style="font-family: STIXGeneral-Italic;">p</span><span class="mi" id="MathJax-Span-178" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-179" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-180" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-181" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-182" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-183" style="font-family: STIXGeneral-Italic;">s</span><span class="mi" id="MathJax-Span-184" style="font-family: STIXGeneral-Italic;">z</span><span class="mi" id="MathJax-Span-185" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-186" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-187" style="font-family: STIXGeneral-Italic;">k<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-188" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-189" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-190" style="font-family: STIXGeneral-Italic;">p</span><span class="mi" id="MathJax-Span-191" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-192" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-193" style="font-family: STIXGeneral-Regular;">.</span><span class="mi" id="MathJax-Span-194" style="font-family: STIXGeneral-Italic; padding-left: 0.206em;">c</span><span class="mi" id="MathJax-Span-195" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-196" style="font-family: STIXGeneral-Italic;">n</span><span class="mi" id="MathJax-Span-197" style="font-family: STIXGeneral-Italic;">n</span><span class="mi" id="MathJax-Span-198" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-199" style="font-family: STIXGeneral-Italic;">c</span><span class="mi" id="MathJax-Span-200" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-201" style="font-family: STIXGeneral-Regular; padding-left: 0.307em;">=</span><span class="mi" id="MathJax-Span-202" style="font-family: STIXGeneral-Italic; padding-left: 0.307em;">l<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-203" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-204" style="font-family: STIXGeneral-Italic;">c</span><span class="mi" id="MathJax-Span-205" style="font-family: STIXGeneral-Italic;">a</span><span class="mi" id="MathJax-Span-206" style="font-family: STIXGeneral-Italic;">l<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-207" style="font-family: STIXGeneral-Italic;">h</span><span class="mi" id="MathJax-Span-208" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-209" style="font-family: STIXGeneral-Italic;">s</span><span class="mi" id="MathJax-Span-210" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-211" style="font-family: STIXGeneral-Regular; padding-left: 0.307em;">:</span><span class="mn" id="MathJax-Span-212" style="font-family: STIXGeneral-Regular; padding-left: 0.307em;">2181</span><span class="mo" id="MathJax-Span-213" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mo" id="MathJax-Span-214" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-215" style="font-family: STIXGeneral-Italic;">a</span><span class="mi" id="MathJax-Span-216" style="font-family: STIXGeneral-Italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.053em;"></span></span><span class="mi" id="MathJax-Span-217" style="font-family: STIXGeneral-Italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.053em;"></span></span><span class="mo" id="MathJax-Span-218" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mo" id="MathJax-Span-219" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-220" style="font-family: STIXGeneral-Italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.053em;"></span></span><span class="mi" id="MathJax-Span-221" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-222" style="font-family: STIXGeneral-Italic;">n</span><span class="mi" id="MathJax-Span-223" style="font-family: STIXGeneral-Italic;">y</span><span class="mo" id="MathJax-Span-224" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-225" style="font-family: STIXGeneral-Italic; padding-left: 0.257em;">p</span><span class="mi" id="MathJax-Span-226" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-227" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-228" style="font-family: STIXGeneral-Italic;">n</span><span class="mi" id="MathJax-Span-229" style="font-family: STIXGeneral-Italic;">c</span><span class="mi" id="MathJax-Span-230" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-231" style="font-family: STIXGeneral-Italic;">p</span><span class="mi" id="MathJax-Span-232" style="font-family: STIXGeneral-Italic;">a</span><span class="mi" id="MathJax-Span-233" style="font-family: STIXGeneral-Italic;">l<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-234" style="font-family: STIXGeneral-Italic;">U<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.053em;"></span></span><span class="mi" id="MathJax-Span-235" style="font-family: STIXGeneral-Italic;">s</span><span class="mi" id="MathJax-Span-236" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-237" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-238" style="font-family: STIXGeneral-Regular; padding-left: 0.307em;">:</span><span class="mo" id="MathJax-Span-239" style="font-family: STIXGeneral-Regular; padding-left: 0.307em;">∗</span><span class="mo" id="MathJax-Span-240" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mo" id="MathJax-Span-241" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-242" style="font-family: STIXGeneral-Italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.053em;"></span></span><span class="mi" id="MathJax-Span-243" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-244" style="font-family: STIXGeneral-Italic;">n</span><span class="mi" id="MathJax-Span-245" style="font-family: STIXGeneral-Italic;">y</span><span class="mo" id="MathJax-Span-246" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-247" style="font-family: STIXGeneral-Italic; padding-left: 0.257em;">h</span><span class="mi" id="MathJax-Span-248" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-249" style="font-family: STIXGeneral-Italic;">s</span><span class="mi" id="MathJax-Span-250" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mn" id="MathJax-Span-251" style="font-family: STIXGeneral-Regular;">127.0.0.1</span><span class="mo" id="MathJax-Span-252" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mo" id="MathJax-Span-253" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-254" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-255" style="font-family: STIXGeneral-Italic;">p</span><span class="mi" id="MathJax-Span-256" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-257" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-258" style="font-family: STIXGeneral-Italic;">a</span><span class="mi" id="MathJax-Span-259" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-260" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-261" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-262" style="font-family: STIXGeneral-Italic;">n</span><span class="mi" id="MathJax-Span-263" style="font-family: STIXGeneral-Italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.053em;"></span></span><span class="mi" id="MathJax-Span-264" style="font-family: STIXGeneral-Italic;">r<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-265" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-266" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-267" style="font-family: STIXGeneral-Italic;">e</span><span class="mo" id="MathJax-Span-268" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mo" id="MathJax-Span-269" style="font-family: STIXGeneral-Regular; padding-left: 0.257em;">−</span><span class="mi" id="MathJax-Span-270" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-271" style="font-family: STIXGeneral-Italic;">o</span><span class="mi" id="MathJax-Span-272" style="font-family: STIXGeneral-Italic;">p</span><span class="mi" id="MathJax-Span-273" style="font-family: STIXGeneral-Italic;">i</span><span class="mi" id="MathJax-Span-274" style="font-family: STIXGeneral-Italic;">c</span><span class="mi" id="MathJax-Span-275" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-276" style="font-family: STIXGeneral-Italic;">e</span><span class="mi" id="MathJax-Span-277" style="font-family: STIXGeneral-Italic;">s</span><span class="mi" id="MathJax-Span-278" style="font-family: STIXGeneral-Italic;">t<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span></span><span style="display: inline-block; width: 0px; height: 2.543em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.309em; border-left: 0px solid; width: 0px; height: 1.253em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>b</mi><mi>i</mi><mi>n</mi><mrow class="MJX-TeXAtom-ORD"><mo>/</mo></mrow><mi>k</mi><mi>a</mi><mi>f</mi><mi>k</mi><mi>a</mi><mo>−</mo><mi>a</mi><mi>c</mi><mi>l</mi><mi>s</mi><mo>.</mo><mi>s</mi><mi>h</mi><mo>−</mo><mo>−</mo><mi>a</mi><mi>u</mi><mi>t</mi><mi>h</mi><mi>o</mi><mi>r</mi><mi>i</mi><mi>z</mi><mi>e</mi><mi>r</mi><mo>−</mo><mi>p</mi><mi>r</mi><mi>o</mi><mi>p</mi><mi>e</mi><mi>r</mi><mi>t</mi><mi>i</mi><mi>e</mi><mi>s</mi><mi>z</mi><mi>o</mi><mi>o</mi><mi>k</mi><mi>e</mi><mi>e</mi><mi>p</mi><mi>e</mi><mi>r</mi><mo>.</mo><mi>c</mi><mi>o</mi><mi>n</mi><mi>n</mi><mi>e</mi><mi>c</mi><mi>t</mi><mo>=</mo><mi>l</mi><mi>o</mi><mi>c</mi><mi>a</mi><mi>l</mi><mi>h</mi><mi>o</mi><mi>s</mi><mi>t</mi><mo>:</mo><mn>2181</mn><mo>−</mo><mo>−</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo>−</mo><mo>−</mo><mi>d</mi><mi>e</mi><mi>n</mi><mi>y</mi><mo>−</mo><mi>p</mi><mi>r</mi><mi>i</mi><mi>n</mi><mi>c</mi><mi>i</mi><mi>p</mi><mi>a</mi><mi>l</mi><mi>U</mi><mi>s</mi><mi>e</mi><mi>r</mi><mo>:</mo><mo>∗</mo><mo>−</mo><mo>−</mo><mi>d</mi><mi>e</mi><mi>n</mi><mi>y</mi><mo>−</mo><mi>h</mi><mi>o</mi><mi>s</mi><mi>t</mi><mn>127.0.0.1</mn><mo>−</mo><mo>−</mo><mi>o</mi><mi>p</mi><mi>e</mi><mi>r</mi><mi>a</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi><mi>W</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>e</mi><mo>−</mo><mo>−</mo><mi>t</mi><mi>o</mi><mi>p</mi><mi>i</mi><mi>c</mi><mi>t</mi><mi>e</mi><mi>s</mi><mi>t</mi></math></span></span><script type="math/tex" id="MathJax-Element-2"> bin/kafka-acls.sh --authorizer-properties zookeeper.connect=localhost:2181 --add --deny-principal User:* --deny-host 127.0.0.1 --operation Write --topic test
+</script> bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test</p>
+
+<blockquote>
+  <p>hello</p>
+</blockquote>
+<!-- content end -->
+</div>
+<br>
+<br>
+    <div id="disqus_thread"></div>
+	<div class="footer">
+		<p>© Copyright 2014 by isnowfy, Designed by isnowfy</p>
+	</div>
+</div>
+<script src="main.js"></script>
+<script id="content" type="text/mustache">
+    <h1>{{title}}</h1>
+    <div class="tag">
+    {{date}}
+    {{#tags}}
+    <a href="/#/tag/{{name}}">#{{name}}</a>
+    {{/tags}}
+    </div>
+</script>
+<script id="pagesTemplate" type="text/mustache">
+    {{#pages}}
+    <li>
+        <a href="{{path}}">{{title}}</a>
+    </li>
+    {{/pages}}
+</script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "main.json",
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+            $("#title").html(data.name);
+            var pagesTemplate = Hogan.compile($("#pagesTemplate").html());
+            var pagesHtml = pagesTemplate.render({"pages": data.pages});
+            $("#pages").append(pagesHtml);
+            //path
+            var path = "cloud-kafka-authorization.html";
+            //path end
+            var now = 0;
+            for (var i = 0; i < data.posts.length; ++i)
+                if (path == data.posts[i].path)
+                    now = i;
+            var post = data.posts[now];
+            var tmp = post.tags.split(" ");
+            var tags = [];
+            for (var i = 0; i < tmp.length; ++i)
+                if (tmp[i].length > 0)
+                    tags.push({"name": tmp[i]});
+            var contentTemplate = Hogan.compile($("#content").html());
+            var contentHtml = contentTemplate.render({"title": post.title, "tags": tags, "date": post.date});
+            $("#main").prepend(contentHtml);
+            if (data.disqus_shortname.length > 0) {
+                var disqus_shortname = data.disqus_shortname;
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            }
+        }
+    });
+});
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ["\\(", "\\)"]], processEscapes: true}});
+</script>
+</body>
+</html>
